@@ -1,0 +1,77 @@
+% RESUME SKELETON — category resume (1-page), article class. Workflow A (template-first) base.
+% Fill every [[TOKEN]]. Keep margins/typography as-is (OPERATIONS.md#format). Density rule: fill the page.
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.38in,top=0.28in,bottom=0.28in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\definecolor{primary}{RGB}{0,0,0}
+\definecolor{accent}{RGB}{0,0,0}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accent,
+    urlcolor=accent,
+    pdfauthor={[[NAME]]},
+    pdftitle={[[NAME]] - Resume - [[CATEGORY\_TITLE]]},
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\linespread{1.1}
+
+\titleformat{\section}
+  {\large\bfseries\color{primary}}
+  {}{0pt}{}
+  [{\vspace{2pt}\color{primary}\hrule height 0.65pt}]
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+
+\setlist[itemize]{leftmargin=1.15em, nosep, topsep=2pt, parsep=0pt, partopsep=0pt, itemsep=2.4pt}
+
+\begin{document}
+
+\begin{center}
+  {\fontsize{14}{16.5}\selectfont \textbf{\color{primary} [[NAME\_UPPER]]}}\\[1pt]
+  \small
+  [[LOCATION]] \ \textbar\ \
+  \href{mailto:[[EMAIL]]}{[[EMAIL]]} \ \textbar\ \
+  [[PHONE]] \ \textbar\ \
+  \href{[[WEBSITE]]}{[[WEBSITE\_LABEL]]} \ \textbar\ \
+  \href{[[LINKEDIN]]}{[[LINKEDIN\_LABEL]]}
+\end{center}
+
+\vspace{-4pt}
+
+\section*{Summary}
+[[2 high-impact sentences, category-specific]]
+
+\section*{Technical Skills}
+\begin{itemize}
+  \item \textbf{[[SKILL\_GROUP\_1\_LABEL]]:} [[bold primary, plain secondary]]
+  \item \textbf{[[SKILL\_GROUP\_2\_LABEL]]:} [[...]]
+\end{itemize}
+
+\section*{Experience}
+% Prioritize bullets aligned with the category; compress secondary achievements to single-line metrics.
+\textbf{[[ROLE\_TITLE]]} \hfill [[DATE\_RANGE]] \\
+\textit{[[EMPLOYER]], [[EMPLOYER\_LOCATION]]}
+\begin{itemize}
+  \item [[bullet]]
+\end{itemize}
+
+\section*{Projects}
+% Curate to the top 3-4 category-relevant projects.
+\textbf{[[PROJECT\_NAME]]} - [[one-line description]]
+
+\section*{Certifications}
+\begin{itemize}
+  \item [[CERT\_NAME]] - [[ISSUER]], [[DATE]]. Full list: \href{[[CERTIFICATIONS\_URL]]}{[[CERTIFICATIONS\_URL\_LABEL]]}
+\end{itemize}
+
+\end{document}
