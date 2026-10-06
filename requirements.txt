@@ -1,0 +1,5 @@
+# Python dependencies used by the kit scripts (stdlib covers everything else)
+websocket-client>=1.6
+google-api-python-client>=2.100
+google-auth>=2.23
+google-auth-oauthlib>=1.1

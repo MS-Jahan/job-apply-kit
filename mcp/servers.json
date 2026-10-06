@@ -1,0 +1,9 @@
+{
+  "_comment": "MCP servers job-apply-kit wants registered. install.py adds any that are missing; it never overwrites an existing entry. {{CDP_PORT}} is replaced from config cdp_port (default 9222).",
+  "chrome-devtools": {
+    "required": false,
+    "role": "fallback browser driver (agent-browser is the default)",
+    "command": "npx",
+    "args": ["-y", "chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:{{CDP_PORT}}"]
+  }
+}

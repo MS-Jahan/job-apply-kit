@@ -1,0 +1,44 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+*.toc
+
+# PDFs are generated outputs; shipped example fixtures are re-included
+*.pdf
+!examples/**/*.pdf
+
+# Secrets and personal config (never commit)
+config.md
+!config.example.md
+.env
+.env.*
+!.env.example
+google_*token*.json
+google_client_secret.json
+*.keyring
+
+# Runtime data belongs in the user's workspace, not in this repo
+JDs/
+output/
+templates/
+.cache/
+SESSIONS.md
+
+# Python / OS / editor / agent state
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+.opencode/
+.opencode-runs/
+.genome/
