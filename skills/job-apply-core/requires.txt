@@ -1,0 +1,1 @@
+# job-apply-core has no skill dependencies
