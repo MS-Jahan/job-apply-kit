@@ -31,7 +31,39 @@ def add(status: str, label: str, hint: str = "") -> None:
 
 def which(cmd: str) -> str | None:
     extra = os.pathsep.join([os.path.expanduser("~/.npm-global/bin"), os.path.expanduser("~/.local/bin")])
-    return shutil.which(cmd, path=os.environ.get("PATH", "") + os.pathsep + extra)
+    hit = shutil.which(cmd, path=os.environ.get("PATH", "") + os.pathsep + extra)
+    return hit or saved_tool_path(cmd)
+
+
+def saved_tool_path(cmd: str) -> str | None:
+    """Direct binary path recorded by install.py (tools.json)."""
+    f = Path(os.path.expanduser(os.environ.get("JAK_TOOLS_FILE") or "~/.config/job-apply-kit/tools.json"))
+    try:
+        data = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    base = cmd.lower().removesuffix(".exe")
+    for tool, p in data.items():
+        try:
+            pp = Path(str(p))
+        except Exception:  # noqa: BLE001
+            continue
+        if tool == cmd or pp.stem.lower() == base:
+            if pp.is_file():
+                return str(pp)
+    return None
+
+
+def on_path(cmd: str) -> bool:
+    return shutil.which(cmd) is not None
+
+
+def show(cmd: str, hit: str) -> str:
+    if on_path(cmd):
+        return hit
+    return hit + "  [not on PATH yet: open a fresh terminal]"
 
 
 def run(cmd: list[str], timeout: int = 15) -> tuple[int, str]:
@@ -58,18 +90,19 @@ def check_latex() -> None:
     win = platform.system() == "Windows"
     t = which("tectonic")
     if t:
-        add("OK", "tectonic", t)
+        add("OK", "tectonic", show("tectonic", t))
     elif which("pdflatex"):
         add("WARN", "tectonic missing, pdflatex found (fallback)", "winget install --id tectonic.tectonic -e" if win else "install tectonic: https://tectonic-typesetting.github.io")
     else:
         add("MISSING", "tectonic (or pdflatex)", "winget install --id tectonic.tectonic -e" if win else "install tectonic: https://tectonic-typesetting.github.io")
     if which("pdfinfo"):
-        add("OK", "pdfinfo (poppler-utils)", "")
+        add("OK", "pdfinfo (poppler-utils)", show("pdfinfo", which("pdfinfo")))
     elif win:
         add("MISSING", "pdfinfo (poppler-utils)", "winget install --id oschwartz10612.Poppler -e  (or scoop/conda; see docs/BOOTSTRAP.md 2.3)")
     else:
         add("MISSING", "pdfinfo (poppler-utils)", "apt install poppler-utils | brew install poppler")
-    add("OK" if which("pandoc") else "WARN", "pandoc (optional, Markdown to DOCX/PDF)", "" if which("pandoc") else "winget install --exact --id JohnMacFarlane.Pandoc" if win else "see docs/BOOTSTRAP.md 2.3 or https://pandoc.org/installing.html")
+    pd = which("pandoc")
+    add("OK" if pd else "WARN", "pandoc (optional, Markdown to DOCX/PDF)", show("pandoc", pd) if pd else "winget install --exact --id JohnMacFarlane.Pandoc" if win else "see docs/BOOTSTRAP.md 2.3 or https://pandoc.org/installing.html")
 
 
 def check_config(cfg_path: str | None):
@@ -147,7 +180,7 @@ def check_browser(cfg) -> None:
     else:
         add("MISSING", "Node", node_hint)
     ab = which("agent-browser")
-    add("OK" if ab else "MISSING", "agent-browser", ab or "npm install -g agent-browser@latest  (and put ~/.npm-global/bin on PATH)")
+    add("OK" if ab else "MISSING", "agent-browser", show("agent-browser", ab) if ab else "npm install -g agent-browser@latest  (and put ~/.npm-global/bin on PATH)")
     try:
         import browser_setup
         found = browser_setup.detect()

@@ -13,6 +13,7 @@
   --list                              list available skills
   --no-mcp                            skip MCP registration
   --setup-mcp-only                    only register MCP servers (no skill install)
+  --no-path                           skip user-PATH update and tools.json record (both on by default)
   --update                            git pull --ff-only first, then install (refuses when
                                       the checkout is dirty; see "Updating the kit" in README.md)
 
@@ -442,6 +443,21 @@ def setup_mcp(dry: bool) -> None:
         register_opencode_file(name, spec, dry)
 
 
+def ensure_path_and_record(dry: bool) -> None:
+    """User-scope PATH update (no admin) + record tool paths for doctor.py."""
+    sys.path.insert(0, str(SKILLS_SRC / CORE / "scripts"))
+    try:
+        import tool_paths
+    except Exception as e:  # noqa: BLE001
+        print(f"PATH setup skipped ({e})")
+        return
+    merged = tool_paths.record(dry=dry)
+    print(f"tools.json: {'would record' if dry else 'recorded'} {len(merged)} tool path(s)")
+    _, msgs = tool_paths.ensure_on_path(dry=dry)
+    for m in msgs:
+        print(("PATH: would: " if dry else "PATH: ") + m)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("skills", nargs="*")
@@ -456,6 +472,7 @@ def main(argv=None) -> int:
     ap.add_argument("--no-mcp", action="store_true")
     ap.add_argument("--setup-mcp-only", action="store_true")
     ap.add_argument("--update", action="store_true")
+    ap.add_argument("--no-path", action="store_true")
     a = ap.parse_args(argv)
 
     if a.list:
@@ -496,6 +513,8 @@ def main(argv=None) -> int:
         with_examples(a.dry_run)
     if not a.no_mcp and not a.dest:
         setup_mcp(a.dry_run)
+    if not a.no_path and not a.dest:
+        ensure_path_and_record(a.dry_run)
     print("\nNext: create your config (see config.example.md), then run ./doctor.sh")
     return 0
 

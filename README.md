@@ -134,6 +134,13 @@ every truth and format gate, compiles each to the right page count, and register
 | `check-discord-jobs` | process Discord job-channel posts end to end |
 | `check-image-batch` | process a batch of pasted job-post screenshots end to end |
 
+## Other agents (Codex, Gemini, Cursor, Kilo, Cline, Roo, Windsurf, Amp, Aider)
+
+The installer targets Claude Code and OpenCode, but the skills are plain
+`SKILL.md` folders and the MCP entry is standard stdio JSON — most harnesses
+can consume both. `docs/AGENTS.md` lists where each agent keeps skills and MCP
+config, with official doc links and copy-paste traps.
+
 ## Privacy
 
 Nothing personal lives in this repository: no name, no contact details, no résumé content, no Drive or
