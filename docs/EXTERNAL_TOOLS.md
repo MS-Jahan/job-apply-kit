@@ -20,7 +20,7 @@ tailor|apply|all` tells you exactly what is missing) and verify with the command
 | Debug browser (Chrome/Edge/Brave/Chromium) | agent-browser, chrome-devtools MCP, raw CDP | apply | see §3.9 + §4 (`browser_setup.py --create`) | start with remote debugging (see §4) | `curl -s http://127.0.0.1:<cdp_port>/json/version` |
 | `chrome-devtools` MCP | fallback browser driver (console/network/performance/Lighthouse, uid-targeted work) | optional | `npx -y chrome-devtools-mcp@latest`; `install.sh` registers it automatically (see §5) | points at the same debug port | MCP tool list shows `mcp__chrome-devtools__*` |
 | SearXNG MCP | JD/company search, first choice | optional | self-host or hosted instance + MCP config | instance URL | a search tool call returns results |
-| Claude Code or OpenCode | runs the skills | all | vendor docs | — | `claude --version` / `opencode --version` |
+| Claude Code or OpenCode | runs the skills | all | see §3.10 | — | `claude --version` / `opencode --version` |
 
 ## 2. Install order (clean Linux box)
 
@@ -58,6 +58,17 @@ Windows Python if you invoke them directly.
 Single static binary; see [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io) for
 the current install command for your platform. No TeX Live install required. `pdflatex` (from a TeX
 Live install) works as a fallback if `tectonic` is unavailable.
+
+Windows options (pick one, then move `tectonic.exe` onto PATH and run
+`tectonic --version` to verify):
+
+- `winget install --id tectonic.tectonic -e` (same `-windows-msvc` zip as below)
+- conda: `conda install tectonic`
+- Direct zip from https://github.com/tectonic-typesetting/tectonic/releases
+  (look for `x86_64-pc-windows-msvc.zip`), or the PowerShell drop script on the
+  install page linked above.
+- Fallback compiler on Windows: MiKTeX from https://miktex.org/download
+  (or `choco install miktex`); macOS: MacTeX; Linux: TeX Live.
 
 ### 3.2 gog (primary Google backend)
 
@@ -116,6 +127,21 @@ export PATH="$HOME/.npm-global/bin:$PATH"
 agent-browser --version
 ```
 
+Install **globally** (`-g`): the local-dependency path (`npm install
+agent-browser` inside a project) is known-broken on Windows (postinstall never
+downloads the native binary). After install, `agent-browser install` downloads
+a bundled Chrome from Google's Chrome-for-Testing channel — optional for this
+kit (we attach to your own debug browser via `agent-browser connect`), but it
+is the upstream-supported way to get a working browser on a bare machine, and
+`agent-browser doctor` diagnoses install problems. Docs:
+https://agent-browser.dev/installation, repo:
+https://github.com/vercel-labs/agent-browser.
+
+Windows notes: supported (native x64 binary + Node.js fallback). If Windows
+Defender quarantines the binary (a known ML-heuristic false positive on some
+releases), restore/allow it and re-run; fallback search:
+`agent-browser windows defender false positive github vercel-labs`.
+
 Expect an `EBADENGINE` warning on Node < 24; the CLI still works. See
 `skills/job-apply-core/references/agent-browser.md` for the full usage guide (connect, tab hygiene,
 the never-kill-the-user's-browser rule, Google Picker file-upload workaround, daemon recovery).
@@ -144,12 +170,18 @@ https://github.com/vercel-labs/agent-browser.
 
 ### 3.7 poppler-utils (pdfinfo) and pandoc
 
-- `pdfinfo`: `sudo apt install poppler-utils` (Debian/Ubuntu),
-  `brew install poppler` (macOS), Windows: `conda install poppler` or
-  `choco install poppler`. Without it, page-budget checks fall back to reading
-  the PDF directly. Fallback query: `poppler pdfinfo windows install`.
-- `pandoc` (optional): OS package, or the official installer at
-  https://pandoc.org/installing.html. Fallback query: `pandoc install download`.
+- `pdfinfo` (required for page-budget checks): `sudo apt install poppler-utils`
+  (Debian/Ubuntu), `brew install poppler` (macOS). Windows — any one of:
+  `winget install --id oschwartz10612.Poppler -e`, `scoop install poppler`,
+  `conda install poppler`, `choco install poppler` (if choco leaves only an
+  unextracted archive, prefer one of the others), or the portable zip from
+  https://github.com/oschwartz10612/poppler-windows/releases (unzip, add its
+  `bin/` to PATH). Without `pdfinfo`, page counts fall back to reading the PDF
+  directly. Fallback query: `poppler pdfinfo windows install`.
+- `pandoc` (optional): OS package, or on Windows
+  `winget install --exact --id JohnMacFarlane.Pandoc`, `choco install pandoc`,
+  or the MSI/zip from https://github.com/jgm/pandoc/releases (full guide:
+  https://pandoc.org/installing.html). Fallback query: `pandoc install download`.
 
 ### 3.8 gog binaries (primary Google backend)
 
@@ -181,6 +213,24 @@ kit). Detection order and download pages:
 detection for the agent; `--create` writes the debug-mode launchers (see §4).
 Re-run detection after installing. Fallback query: `download chrome windows`,
 `download brave browser`, etc.
+
+### 3.10 Claude Code / OpenCode (the agent host)
+
+Both run natively on Windows — no WSL required (WSL2 remains the only Windows
+option with sandboxing support for Claude Code; OpenCode upstream notes rough
+edges natively, so keep `docs/help/08-compatibility.md` translations in mind).
+
+- Claude Code — PowerShell: `irm https://claude.ai/install.ps1 | iex`;
+  CMD: `curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd`;
+  or `winget install Anthropic.ClaudeCode` (does not auto-update — re-run
+  `winget upgrade Anthropic.ClaudeCode` periodically). Install
+  Git for Windows as well so Claude Code gets its Bash tool; without it, shell
+  commands run via PowerShell instead. Reference: https://code.claude.com/docs/en/setup.
+- OpenCode — `winget install --id SST.OpenCodeDesktop -e`, or
+  `npm i -g opencode-ai@latest` (needs Node), or `scoop install opencode` /
+  `choco install opencode`. Reference: https://opencode.ai/docs.
+- Verify: `claude --version` / `opencode --version` in a fresh terminal
+  (installers extend PATH mid-session, so open a new window first).
 
 ## 4. Starting your debug browser
 

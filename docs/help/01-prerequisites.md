@@ -30,7 +30,15 @@ fallbacks): `docs/BOOTSTRAP.md`.
 - Python: python.org installer or `winget install Python.Python.3.12`. Wherever any skill says
   `python3`, run `py -3` (or `python`) instead.
 - Node: the nodejs.org LTS installer (adds `npm` to PATH automatically) or
-  `winget install OpenJS.NodeJS.LTS`.
+  `winget install OpenJS.NodeJS.LTS`. Then `npm install -g agent-browser@latest`
+  (global install only — the per-project local install is broken on Windows).
+- PDFs: `winget install --id tectonic.tectonic -e`;
+  `winget install --id oschwartz10612.Poppler -e` (or `scoop install poppler`);
+  optional `winget install --exact --id JohnMacFarlane.Pandoc`.
+- Agent host: Claude Code via `irm https://claude.ai/install.ps1 | iex` (plus Git
+  for Windows for the Bash tool), or `winget install Anthropic.ClaudeCode`;
+  OpenCode via `winget install --id SST.OpenCodeDesktop -e` or `npm i -g opencode-ai`.
+  Full commands: `docs/BOOTSTRAP.md` §2.6.
 - The `.sh` wrappers (`install.sh`, `doctor.sh`, `tests/run.sh`) need Git Bash or WSL. Without
   those, call the Python entry points directly: `python install.py`, `python doctor.py`.
 - `curl.exe` ships with Windows 10/11, so the debug-port probe

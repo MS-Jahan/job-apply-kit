@@ -22,8 +22,10 @@ When the user asks you to set up, fix, or verify their environment:
    c. If the URL or command no longer works (projects move), run a web search
       with the **fallback query** from section 2 and re-anchor on the official
       domain (python.org, nodejs.org, tectonic-typesetting.github.io,
-      pandoc.org, github.com/openclaw/gogcli, google.com/chrome,
-      microsoft.com, brave.com).
+      pandoc.org, github.com/openclaw/gogcli, github.com/jgm/pandoc,
+      github.com/oschwartz10612/poppler-windows,
+      github.com/vercel-labs/agent-browser, google.com/chrome,
+      microsoft.com, brave.com, code.claude.com, opencode.ai).
 4. **Verify after every install** with the Verify command in the table before
    moving on. A tool is done only when `doctor.py` flips it to OK.
 5. **Browsers (section 3):** detect with `browser_setup.py --list`, tell the
@@ -60,7 +62,7 @@ python3 -c "import platform; print(platform.system(), platform.machine())"
 | `pandoc` | Markdown to DOCX/PDF path | https://pandoc.org/installing.html | `pandoc --version` |
 | `gog` | Gmail drafts, Drive, Sheets | https://github.com/openclaw/gogcli (docs: https://gogcli.sh) | `gog --version`; `gog auth list` |
 | Chromium browser | debug-mode browsing | https://www.google.com/chrome/ etc. (section 3) | `browser_setup.py --list` |
-| Claude Code or OpenCode | runs the skills | https://code.claude.com/docs, https://opencode.ai/docs | `claude --version` / `opencode --version` |
+| Claude Code or OpenCode | runs the skills | https://code.claude.com/docs/en/setup, https://opencode.ai/docs (section 2.6) | `claude --version` / `opencode --version` |
 
 ### 2.1 Python 3.9+
 
@@ -78,25 +80,36 @@ python3 -c "import platform; print(platform.system(), platform.machine())"
 - macOS: `brew install node@22`. Fallback query: `nodejs macos install`.
 - Linux: distro package or nvm (https://github.com/nvm-sh/nvm):
   `nvm install --lts`. Fallback query: `nodejs linux install nvm`.
-- Then: `npm install -g agent-browser@latest` and put the global bin dir on
-  PATH (`~/.npm-global/bin` on Linux/macOS; automatic on Windows).
+- Then, always **globally** (`-g`; the per-project local install is
+  known-broken on Windows): `npm install -g agent-browser@latest` and put the
+  global bin dir on PATH (`~/.npm-global/bin` on Linux/macOS; automatic on
+  Windows). Optionally `agent-browser install` for a bundled Chrome
+  (Chrome-for-Testing channel) — the kit attaches to your own debug browser
+  anyway. If Windows Defender quarantines the binary, restore/allow it and
+  re-run. Details: `docs/EXTERNAL_TOOLS.md` section 3.4.
   Upstream repo for flag changes: https://github.com/vercel-labs/agent-browser.
 
-### 2.3 tectonic, poppler-utils, pandoc
+### 2.3 tectonic, poppler-utils, pandoc (all available on Windows)
 
-- `tectonic` (single static binary, no TeX Live needed):
-  Unix: `curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh`;
-  Windows PowerShell: the two-line `drop-ps1` command at
-  https://tectonic-typesetting.github.io/en-US/install.html;
-  or `conda install tectonic`, or `winget install tectonic.tectonic`.
-  Direct zips (look for `x86_64-pc-windows-msvc` on Windows) at
-  https://github.com/tectonic-typesetting/tectonic/releases.
-  Fallback query: `tectonic typesetting install download`.
-- `poppler-utils` (`pdfinfo`): `sudo apt install poppler-utils` /
-  `brew install poppler` / Windows: `conda install poppler` or
-  `choco install poppler`. Fallback query: `poppler pdfinfo windows install`.
-- `pandoc` (optional): OS package or the official installer at
-  https://pandoc.org/installing.html. Fallback query: `pandoc install download`.
+- `tectonic` (single static binary, no TeX Live needed): Windows:
+  `winget install --id tectonic.tectonic -e`, `conda install tectonic`, or the
+  `x86_64-pc-windows-msvc.zip` from
+  https://github.com/tectonic-typesetting/tectonic/releases
+  (move `tectonic.exe` onto PATH). Unix: the `drop-sh` one-liner at
+  https://tectonic-typesetting.github.io/en-US/install.html.
+  Fallback (any OS): `pdflatex` — Windows via MiKTeX
+  (https://miktex.org/download or `choco install miktex`), macOS via MacTeX,
+  Linux via TeX Live.
+- `poppler-utils` (`pdfinfo`, required for page budgets): Windows:
+  `winget install --id oschwartz10612.Poppler -e`, `scoop install poppler`,
+  `conda install poppler`, `choco install poppler` (if choco leaves an
+  unextracted archive, use one of the others), or the portable zip from
+  https://github.com/oschwartz10612/poppler-windows/releases.
+  macOS: `brew install poppler`. Linux: `sudo apt install poppler-utils`.
+  Without it, page counts fall back to reading the PDF directly.
+- `pandoc` (optional): Windows: `winget install --exact --id JohnMacFarlane.Pandoc`,
+  `choco install pandoc`, or the MSI from https://github.com/jgm/pandoc/releases
+  (guide: https://pandoc.org/installing.html). macOS/Linux: OS package.
 
 ### 2.4 gog (primary Google backend)
 
@@ -116,6 +129,19 @@ python3 -c "import platform; print(platform.system(), platform.machine())"
 Covered in section 3 below. Firefox is not supported (no CDP driver in the
 kit). If no browser is found, point the user at the official download pages
 and re-run detection afterwards.
+
+### 2.6 Claude Code / OpenCode on Windows (both run natively, no WSL needed)
+
+- Claude Code — PowerShell: `irm https://claude.ai/install.ps1 | iex`;
+  or `winget install Anthropic.ClaudeCode` (no auto-update — re-run
+  `winget upgrade Anthropic.ClaudeCode` periodically). Also install
+  Git for Windows so Claude Code gets its Bash tool; without it, shell
+  commands run via PowerShell. Reference: https://code.claude.com/docs/en/setup.
+- OpenCode — `winget install --id SST.OpenCodeDesktop -e`, or
+  `npm i -g opencode-ai@latest`, or `scoop install opencode` /
+  `choco install opencode`. Reference: https://opencode.ai/docs.
+- Verify in a fresh terminal (installers extend PATH mid-session):
+  `claude --version` / `opencode --version`.
 
 ## 3. Debug browser (agent-driven setup)
 
