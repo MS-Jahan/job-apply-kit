@@ -17,6 +17,12 @@ Agent workflow (also works for humans):
      --profile <dir> (or --isolated for the legacy jak-browser-<name> dir).
      agent-browser and the chrome-devtools MCP attach to it on --port
      (default: config cdp_port, else 9222).
+  4. Never start the debug session while the user's normal browser is still
+     running (the flag is silently ignored by the live instance). Run
+     browser_setup.py --browser <name> --check-running first; when it reports
+     RUNNING, relay the CLOSE_ASK message (save work, close ALL windows) and
+     wait for the user's confirmation. --launch enforces the same guard
+     (exit 2 = refused, ask the user). The agent never kills the browser.
 
 Only the standard library is used. No hardcoded /tmp, no shell=True.
 Env overrides (tests, custom installs): JAK_BROWSER_BIN_CHROME / _EDGE /
@@ -264,6 +270,89 @@ def create_shortcut(name: str, launcher: Path, desktop: Path, dry: bool) -> str:
     return str(link)
 
 
+PROCESS_NAMES: dict[str, dict[str, list[str]]] = {
+    "chrome": {"win": ["chrome.exe"], "nix": ["chrome", "google-chrome", "google-chrome-stable"]},
+    "edge": {"win": ["msedge.exe"], "nix": ["microsoft-edge", "msedge", "microsoft-edge-stable"]},
+    "brave": {"win": ["brave.exe"], "nix": ["brave", "brave-browser", "brave-browser-stable"]},
+    "chromium": {"win": ["chrome.exe", "chromium.exe"], "nix": ["chromium", "chromium-browser"]},
+}
+
+CLOSE_ASK = (
+    "Please save your work in {label} and close ALL {label} windows, "
+    "then tell the agent to continue — it starts the debug session only "
+    "after your confirmation. The agent will never close your browser itself."
+)
+
+
+def tasklist_has(images: list[str], output: str) -> bool:
+    """True when Windows tasklist CSV output lists one of images."""
+    import csv
+    import io
+
+    want = {i.lower() for i in images}
+    try:
+        for row in csv.reader(io.StringIO(output)):
+            if row and row[0].strip().strip('"').lower() in want:
+                return True
+    except Exception:  # noqa: BLE001  unparseable output counts as unknown, not running
+        return False
+    return False
+
+
+def is_browser_running(name: str) -> bool | None:
+    """True when the browser has live processes, False when none, None when unknown."""
+    spec = PROCESS_NAMES[name]
+    try:
+        if platform.system() == "Windows":
+            try:
+                p = subprocess.run(
+                    ["tasklist", "/FO", "CSV", "/NH"],
+                    capture_output=True, text=True, timeout=30,
+                )
+            except Exception:  # noqa: BLE001  tasklist unavailable
+                return None
+            if p.returncode != 0:
+                return None
+            return tasklist_has(spec["win"], p.stdout)
+        for cmd in spec["nix"]:
+            try:
+                p = subprocess.run(
+                    ["pgrep", "-x", cmd],
+                    capture_output=True, text=True, timeout=15,
+                )
+            except FileNotFoundError:
+                break  # no pgrep on this machine; try pidof below
+            if p.returncode == 0:
+                return True
+        else:
+            return False
+        for cmd in spec["nix"]:
+            try:
+                p = subprocess.run(
+                    ["pidof", cmd],
+                    capture_output=True, text=True, timeout=15,
+                )
+            except FileNotFoundError:
+                return None
+            if p.returncode == 0 and p.stdout.strip():
+                return True
+        return False
+    except Exception:  # noqa: BLE001  any check failure counts as unknown, never as running
+        return None
+
+
+def start_launcher(launcher: Path) -> None:
+    """Start a generated launcher detached (no wait, no window inheritance)."""
+    if platform.system() == "Windows":
+        subprocess.Popen(["cmd", "/c", str(launcher)],  # noqa: S603  generated file, not user input
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         stdin=subprocess.DEVNULL)
+    else:
+        subprocess.Popen([str(launcher)],  # noqa: S603  generated file, not user input
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         stdin=subprocess.DEVNULL, start_new_session=True)
+
+
 def parse_browsers(arg: str, found: list[dict]) -> list[dict]:
     want = [b.strip().lower() for b in arg.split(",") if b.strip()]
     if want == ["all"]:
@@ -283,6 +372,10 @@ def main(argv=None) -> int:
     ap.add_argument("--json", action="store_true", help="with --list: machine-readable output")
     ap.add_argument("--browser", default="", help="'all' or comma-separated names (chrome,edge,brave,chromium)")
     ap.add_argument("--create", action="store_true", help="write launchers (+ desktop shortcuts) for --browser")
+    ap.add_argument("--check-running", action="store_true",
+                    help="with --browser: report whether each browser is running (exit 2 if any is; run before launching)")
+    ap.add_argument("--launch", action="store_true",
+                    help="with --browser: write launchers if needed, then start the debug session — refuses when the browser is running (exit 2) so the agent asks the user first")
     ap.add_argument("--port", type=int, default=None, help="CDP port (default: config cdp_port, else 9222)")
     ap.add_argument("--out-dir", default=str(REPO), help="where to write launchers (default: kit repo root)")
     ap.add_argument("--profile", default="", help="explicit profile dir (adds --user-data-dir); default: reuse the browser's own default profile (recommended, already logged in)")
@@ -297,7 +390,20 @@ def main(argv=None) -> int:
     if a.json:
         print(json.dumps({"browsers": found, "suggested": (suggest(found) or {}).get("name")}, indent=2))
         return 0
-    if a.list or (not a.create):
+    if a.check_running and not (a.create or a.launch):
+        if not a.browser:
+            raise SystemExit("--check-running needs --browser <names|all> (see --list)")
+        if not found:
+            raise SystemExit("no Chromium-based browser detected; install one first (see --list)")
+        code = 0
+        for f in parse_browsers(a.browser, found):
+            state = is_browser_running(f["name"])
+            print(f"{f['name']:10}{'RUNNING' if state else 'not running' if state is False else 'unknown (could not check — ask the user)'}")
+            if state:
+                print(f"  {CLOSE_ASK.format(label=f['label'])}")
+                code = 2
+        return code
+    if a.list or (not a.create and not a.launch):
         if not found:
             print("no Chromium-based browser detected (looked for Chrome, Edge, Brave, Chromium).")
             print("Install one, then re-run --list. Downloads:")
@@ -310,7 +416,7 @@ def main(argv=None) -> int:
         return 0
 
     if not a.browser:
-        raise SystemExit("--create needs --browser <names|all> (see --list)")
+        raise SystemExit("--create/--launch needs --browser <names|all> (see --list)")
     if not found:
         raise SystemExit("no Chromium-based browser detected; install one first (see --list)")
     if a.profile and a.isolated:
@@ -343,6 +449,32 @@ def main(argv=None) -> int:
         if not a.no_shortcuts:
             link = create_shortcut(f["name"], launcher.resolve(), desktop, a.dry_run)
             print(f"  shortcut: {link}")
+        state = None if a.dry_run else is_browser_running(f["name"])
+        if state:
+            print(f"  WARNING: {f['label']} appears to be RUNNING.")
+            print(f"  {CLOSE_ASK.format(label=f['label'])}")
+        elif state is None and not a.dry_run:
+            print(f"  note: could not determine whether {f['label']} is running — ask the user before launching.")
+    if a.launch and not a.dry_run:
+        blocked = False
+        for f in parse_browsers(a.browser, found):
+            state = is_browser_running(f["name"])
+            launcher = out_dir / launcher_name(f["name"])
+            if state:
+                print(f"REFUSED: {f['label']} is running — not starting the debug session.")
+                print(f"  {CLOSE_ASK.format(label=f['label'])}")
+                blocked = True
+            elif state is None:
+                print(f"REFUSED: could not determine whether {f['label']} is running — ask the user to")
+                print("  confirm the browser is fully closed before continuing.")
+                blocked = True
+            else:
+                start_launcher(launcher.resolve())
+                print(f"started {f['label']} debug session from {launcher}")
+        if blocked:
+            return 2
+        print("Verify: curl http://127.0.0.1:{port}/json/version".format(port=port))
+        return 0
     if a.profile or a.isolated:
         print("\nNext: double-click the desktop shortcut, log in once, leave the browser running.")
     else:

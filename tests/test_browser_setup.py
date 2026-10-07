@@ -4,7 +4,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPT = str(REPO / "skills" / "job-apply-core" / "scripts" / "browser_setup.py")
@@ -157,6 +160,92 @@ class BrowserSetupTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertFalse(out.exists())
         self.assertFalse(desk.exists())
+
+    def test_tasklist_parser(self):
+        sample = '"chrome.exe","1234","Console","1","100,000 K"\r\n"explorer.exe","5678","Console","1","50,000 K"\r\n'
+        self.assertTrue(browser_setup.tasklist_has(["chrome.exe"], sample))
+        self.assertFalse(browser_setup.tasklist_has(["msedge.exe"], sample))
+        self.assertFalse(browser_setup.tasklist_has(["chrome.exe"], "garbage((("))
+
+    def test_create_warns_when_browser_running(self):
+        env = fake_env(self.t, "chrome")
+        old = dict(os.environ)
+        os.environ.update(env)
+        try:
+            out, desk = self.t / "launch", self.t / "desk"
+            with mock.patch.object(browser_setup, "is_browser_running", return_value=True):
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    code = browser_setup.main(["--browser", "chrome", "--create",
+                                               "--out-dir", str(out), "--desktop-dir", str(desk)])
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+        self.assertEqual(code, 0)
+        text = buf.getvalue()
+        self.assertIn("WARNING", text)
+        self.assertIn("RUNNING", text)
+        self.assertIn("save your work", text)
+
+    def test_launch_refuses_when_browser_running(self):
+        env = fake_env(self.t, "chrome")
+        old = dict(os.environ)
+        os.environ.update(env)
+        try:
+            out, desk = self.t / "launch", self.t / "desk"
+            with mock.patch.object(browser_setup, "is_browser_running", return_value=True), \
+                 mock.patch.object(browser_setup, "start_launcher") as start:
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    code = browser_setup.main(["--browser", "chrome", "--launch",
+                                               "--out-dir", str(out), "--desktop-dir", str(desk)])
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+        self.assertEqual(code, 2)
+        self.assertIn("REFUSED", buf.getvalue())
+        start.assert_not_called()
+
+    def test_launch_starts_when_browser_closed(self):
+        env = fake_env(self.t, "chrome")
+        old = dict(os.environ)
+        os.environ.update(env)
+        try:
+            out, desk = self.t / "launch", self.t / "desk"
+            with mock.patch.object(browser_setup, "is_browser_running", return_value=False), \
+                 mock.patch.object(browser_setup, "start_launcher") as start:
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    code = browser_setup.main(["--browser", "chrome", "--launch",
+                                               "--out-dir", str(out), "--desktop-dir", str(desk)])
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+        self.assertEqual(code, 0)
+        self.assertIn("started", buf.getvalue())
+        start.assert_called_once()
+
+    def test_check_running_reports_state(self):
+        env = fake_env(self.t, "chrome")
+        old = dict(os.environ)
+        os.environ.update(env)
+        try:
+            with mock.patch.object(browser_setup, "is_browser_running", return_value=False):
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    code = browser_setup.main(["--browser", "chrome", "--check-running"])
+            self.assertEqual(code, 0)
+            self.assertIn("not running", buf.getvalue())
+            with mock.patch.object(browser_setup, "is_browser_running", return_value=True):
+                buf = StringIO()
+                with redirect_stdout(buf):
+                    code = browser_setup.main(["--browser", "chrome", "--check-running"])
+            self.assertEqual(code, 2)
+            self.assertIn("RUNNING", buf.getvalue())
+            self.assertIn("save your work", buf.getvalue())
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
 
 
 if __name__ == "__main__":

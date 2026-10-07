@@ -50,6 +50,13 @@ Flags: `--browser all` or `--browser chrome,brave`, `--port` (default: config
 the user asks, `--dry-run` to preview, `--no-shortcuts` for launchers only.
 Full agent runbook: `docs/BOOTSTRAP.md` §3.
 
+**Before starting: the browser must be fully closed.** Run
+`browser_setup.py --browser <name> --check-running` — when it says RUNNING,
+tell the user their browser appears to be running, ask them to save their
+work and close ALL its windows, and wait for confirmation before continuing.
+`--launch` enforces the same guard (refuses with exit 2 while running).
+The agent never closes or kills the user's browser.
+
 ## Step 1b — manual start (fallback)
 
 If you prefer typing the command yourself (this is exactly what the generated

@@ -207,6 +207,22 @@ with the existing default profile, already logged in), and leaves the
 browser running. The agent verifies with
 `curl http://127.0.0.1:9222/json/version` (Windows: `curl.exe`) and
 `agent-browser connect 9222 && agent-browser tab list`.
+
+**Never start the debug session while the user's normal browser is still
+running** — the flag is silently ignored by the live instance and the agent
+ends up attached to the wrong window (or nothing). The guard flow is:
+
+1. `browser_setup.py --browser <name> --check-running` (exit 2 = running).
+   `--create` prints the same WARNING automatically.
+2. When it reports RUNNING, relay the script's message: the browser may be
+   running with unsaved work — ask the user to save everything, close ALL
+   its windows, and confirm. Wait for that confirmation; never kill the
+   browser yourself.
+3. Only then start it: `browser_setup.py --browser <name> --launch`
+   (refuses with exit 2 while running, starts the launcher detached when
+   closed), or tell the user to double-click the desktop shortcut.
+4. Verify with `curl http://127.0.0.1:9222/json/version`.
+
 Manual commands for every OS are in `docs/EXTERNAL_TOOLS.md` section 4;
 the click-through guide is in `docs/help/03-browser-setup.md`.
 
