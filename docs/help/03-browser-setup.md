@@ -14,10 +14,41 @@ Back to [index](index.md). Command reference: `docs/EXTERNAL_TOOLS.md` §§3.4, 
    `picker_upload.py` for Google Picker file inputs. Plain Python, no extra install beyond
    `requirements.txt`.
 
-## Step 1 — start your own debug browser
+## Step 1 — detect, choose, generate shortcuts (preferred)
 
-The kit never launches or kills your browser. Start it yourself with remote debugging, log into your
-sites once in that profile, and leave it running:
+The agent does this with you — Firefox is not supported, only Chromium-based
+browsers (Chrome, Edge, Brave, Chromium):
+
+```bash
+python3 skills/job-apply-core/scripts/browser_setup.py --list
+```
+
+This prints every supported browser found on the machine and marks the
+suggestion (Chrome first, then Edge, Brave, Chromium). Tell the agent which to
+use — several allowed — then it runs:
+
+```bash
+python3 skills/job-apply-core/scripts/browser_setup.py --browser chrome --create
+```
+
+That writes one launcher per browser into the kit directory
+(`browser-debug-<name>.bat` on Windows, `.sh` elsewhere) plus a
+double-clickable desktop shortcut each (`JAK <label> (debug)`). Click the
+shortcut, log into your sites once in that profile, leave it running. Verify:
+
+```bash
+curl http://127.0.0.1:9222/json/version
+agent-browser connect 9222 && agent-browser tab list   # your real tabs = attached
+```
+
+Flags: `--browser all` or `--browser chrome,brave`, `--port` (default: config
+`cdp_port`), `--dry-run` to preview, `--no-shortcuts` for launchers only.
+Full agent runbook: `docs/BOOTSTRAP.md` §3.
+
+## Step 1b — manual start (fallback)
+
+If you prefer typing the command yourself (this is exactly what the generated
+launchers do):
 
 | OS | Example |
 |---|---|
@@ -48,9 +79,11 @@ never kill the user's browser. Full usage guide:
 ## Step 3 — MCP fallback: auto-configured, with a manual path
 
 **Auto:** `./install.sh` registers the chrome-devtools MCP for you — user scope in Claude Code
-(applies to every project) and in OpenCode's config when that file exists. It never overwrites an
-existing registration. Re-run any time with `./install.sh --setup-mcp-only`. So in the normal flow
-there is nothing to configure by hand.
+(`~/.claude.json`, top-level `mcpServers`) and global config in OpenCode
+(`~/.config/opencode/opencode.json`). Missing files are created; existing entries are
+never overwritten. Re-run any time with `./install.sh --setup-mcp-only`. So in the normal flow
+there is nothing to configure by hand. The server definition always comes from
+`mcp/servers.json` — that file is the JSON format source.
 
 **Manual** (if you skipped it with `--no-mcp`, or want to verify):
 

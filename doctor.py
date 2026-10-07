@@ -61,8 +61,8 @@ def check_latex() -> None:
         add("WARN", "tectonic missing, pdflatex found (fallback)", "install tectonic: https://tectonic-typesetting.github.io")
     else:
         add("MISSING", "tectonic (or pdflatex)", "install tectonic: https://tectonic-typesetting.github.io")
-    add("OK" if which("pdfinfo") else "MISSING", "pdfinfo (poppler-utils)", "" if which("pdfinfo") else "apt install poppler-utils | brew install poppler")
-    add("OK" if which("pandoc") else "WARN", "pandoc (optional, Markdown to DOCX/PDF)", "" if which("pandoc") else "apt install pandoc | brew install pandoc")
+    add("OK" if which("pdfinfo") else "MISSING", "pdfinfo (poppler-utils)", "" if which("pdfinfo") else "apt install poppler-utils | brew install poppler | conda install poppler (see docs/BOOTSTRAP.md 2.3)")
+    add("OK" if which("pandoc") else "WARN", "pandoc (optional, Markdown to DOCX/PDF)", "" if which("pandoc") else "see docs/BOOTSTRAP.md 2.3 or https://pandoc.org/installing.html")
 
 
 def check_config(cfg_path: str | None):
@@ -134,26 +134,43 @@ def check_browser(cfg) -> None:
             major = int(out.lstrip("v").split(".")[0])
         except ValueError:
             major = 0
-        add("OK" if major >= 18 else "MISSING", f"Node {out}", "" if major >= 18 else "install Node 18+")
+        add("OK" if major >= 18 else "MISSING", f"Node {out}", "" if major >= 18 else "install Node 18+ (see docs/BOOTSTRAP.md)")
     else:
-        add("MISSING", "Node", "install Node 18+")
+        add("MISSING", "Node", "install Node 18+ (see docs/BOOTSTRAP.md)")
     ab = which("agent-browser")
     add("OK" if ab else "MISSING", "agent-browser", ab or "npm install -g agent-browser@latest  (and put ~/.npm-global/bin on PATH)")
+    try:
+        import browser_setup
+        found = browser_setup.detect()
+    except Exception:  # noqa: BLE001
+        found = []
+    if found:
+        names = ", ".join(f"{f['label']}" for f in found)
+        add("OK", f"Chromium browser(s): {names}", "run browser_setup.py --create to make debug-mode shortcuts")
+    else:
+        add("WARN", "no Chromium browser found (Chrome/Edge/Brave/Chromium)",
+            "install one (see docs/BOOTSTRAP.md §2) or set JAK_BROWSER_BIN_<NAME>; Firefox is not supported")
     port = (cfg.int("cdp_port") if cfg else None) or 9222
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/json/version", timeout=3) as r:
             ver = json.loads(r.read().decode()).get("Browser", "browser")
         add("OK", f"debug browser answers on port {port} ({ver})")
     except Exception:  # noqa: BLE001
-        add("MISSING", f"debug browser on port {port}", "start your browser with --remote-debugging-port=%d (see docs/EXTERNAL_TOOLS.md)" % port)
+        add("MISSING", f"debug browser on port {port}", "double-click a JAK debug shortcut (browser_setup.py --create) or start it by hand: --remote-debugging-port=%d (see docs/EXTERNAL_TOOLS.md §4)" % port)
     mcp = False
-    for f in (Path(os.path.expanduser("~/.claude.json")), Path(os.path.expanduser("~/.config/opencode/opencode.json"))):
+    candidates = [Path(os.path.expanduser("~/.claude.json")), Path(os.path.expanduser("~/.config/opencode/opencode.json"))]
+    if os.environ.get("CLAUDE_CONFIG_DIR"):
+        candidates.append(Path(os.path.expanduser(os.environ["CLAUDE_CONFIG_DIR"])) / ".claude.json")
+    for override in ("JAK_CLAUDE_CONFIG", "JAK_OPENCODE_CONFIG", "OPENCODE_CONFIG"):
+        if os.environ.get(override):
+            candidates.append(Path(os.path.expanduser(os.environ[override])))
+    for f in candidates:
         try:
             if "chrome-devtools" in f.read_text():
                 mcp = True
         except OSError:
             pass
-    add("OK" if mcp else "WARN", "chrome-devtools MCP registered (fallback)", "" if mcp else "optional: see docs/EXTERNAL_TOOLS.md")
+    add("OK" if mcp else "WARN", "chrome-devtools MCP registered (fallback)", "" if mcp else "optional: run ./install.sh --setup-mcp-only (creates the config when missing) or see docs/EXTERNAL_TOOLS.md §5")
 
 
 def main(argv=None) -> int:

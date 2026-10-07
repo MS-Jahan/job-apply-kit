@@ -14,9 +14,15 @@
   --no-mcp                            skip MCP registration
   --setup-mcp-only                    only register MCP servers (no skill install)
 
-MCP registration (mcp/servers.json): for every server not already registered, run
-`claude mcp add -s user ...` when the claude CLI exists, and add an entry to the OpenCode
-config (~/.config/opencode/opencode.json) when that file exists. Existing entries are never changed.
+MCP registration (mcp/servers.json is the single source of truth for the server
+definitions; install.py only renders {{CDP_PORT}} into it and never hardcodes
+server commands/args): for every server not already registered, run
+`claude mcp add -s user ...` when the claude CLI exists (otherwise create or
+merge ~/.claude.json directly, user scope), and create or merge the OpenCode
+global config (~/.config/opencode/opencode.json) whether or not that file
+already exists. Existing entries are never changed or overwritten.
+Env overrides (used by tests): JAK_CLAUDE_BIN, JAK_CLAUDE_CONFIG,
+JAK_OPENCODE_CONFIG (else OPENCODE_CONFIG), JAK_MANIFEST.
 
 Tokens replaced in SKILL.md and other *.md files inside an installed skill:
   {{SKILL_DIR}}  absolute path of that installed skill
@@ -214,6 +220,145 @@ def mcp_servers(port: str) -> dict:
     return out
 
 
+def claude_config_path() -> Path:
+    """User-scope Claude Code config.
+
+    Official docs (code.claude.com/docs/en/mcp-quickstart): user scope lives in
+    ~/.claude.json under the top-level ``mcpServers`` key (Windows:
+    %USERPROFILE%\\.claude.json). When $CLAUDE_CONFIG_DIR is set, Claude Code
+    reads .claude.json from inside that directory instead.
+    """
+    override = os.environ.get("JAK_CLAUDE_CONFIG")
+    if override:
+        return Path(os.path.expanduser(override))
+    cfg_dir = os.environ.get("CLAUDE_CONFIG_DIR")
+    if cfg_dir:
+        return Path(os.path.expanduser(cfg_dir)) / ".claude.json"
+    return Path(os.path.expanduser("~/.claude.json"))
+
+
+def opencode_config_path() -> Path:
+    """Global OpenCode config.
+
+    Official docs (opencode.ai/docs/config): global config is
+    ~/.config/opencode/opencode.json. $OPENCODE_CONFIG points at a custom
+    config file instead.
+    """
+    override = os.environ.get("JAK_OPENCODE_CONFIG") or os.environ.get("OPENCODE_CONFIG")
+    if override:
+        return Path(os.path.expanduser(override))
+    return Path(os.path.expanduser("~/.config/opencode/opencode.json"))
+
+
+def _claude_entry(spec: dict) -> dict:
+    """Claude Code entry shape: {command, args[, env]} (stdio server).
+
+    Same shape as the project-scope .mcp.json in this repo; Claude Code also
+    accepts it under the top-level ``mcpServers`` key of ~/.claude.json.
+    """
+    entry: dict = {"command": spec["command"], "args": list(spec["args"])}
+    if "env" in spec:
+        entry["env"] = spec["env"]
+    return entry
+
+
+def _opencode_entry(spec: dict) -> dict:
+    """OpenCode v1 entry shape: {type: local, command: [...], ...}."""
+    return {"type": "local", "command": [spec["command"], *spec["args"]]}
+
+
+def _read_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return None
+    except ValueError:
+        return "INVALID"
+
+
+def _write_json(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def register_claude_file(name: str, spec: dict, dry: bool) -> bool:
+    """Create/merge ~/.claude.json directly. Returns True when handled."""
+    path = claude_config_path()
+    entry = _claude_entry(spec)
+    cfg = _read_json(path)
+    if cfg == "INVALID":
+        print(f"mcp {name}: {path} is not plain JSON, add this by hand under top-level mcpServers: "
+              + json.dumps({name: entry}))
+        return True
+    if cfg is None:
+        print(f"mcp {name}: creating {path} (user scope, top-level mcpServers)")
+        if not dry:
+            _write_json(path, {"mcpServers": {name: entry}})
+        return True
+    if not isinstance(cfg, dict):
+        print(f"mcp {name}: {path} has an unexpected shape, add this by hand under top-level mcpServers: "
+              + json.dumps({name: entry}))
+        return True
+    if name in (cfg.get("mcpServers") or {}):
+        print(f"mcp {name}: already registered in Claude Code ({path})")
+        return True
+    print(f"mcp {name}: registering in Claude Code ({path}; backup kept)")
+    if not dry:
+        shutil.copy2(path, str(path) + ".jak-backup")
+        cfg.setdefault("mcpServers", {})[name] = entry
+        _write_json(path, cfg)
+    return True
+
+
+def register_opencode_file(name: str, spec: dict, dry: bool) -> None:
+    """Create/merge the OpenCode global config. Never overwrites entries.
+
+    Supports both the v1 shape (mcp.<name>) from opencode.ai/docs/mcp-servers
+    and the v2 shape (mcp.servers.<name>) from opencode.ai/v2/docs/mcp-servers:
+    when the file already uses one shape, the entry goes there.
+    """
+    path = opencode_config_path()
+    entry = _opencode_entry(spec)
+    cfg = _read_json(path)
+    if cfg == "INVALID":
+        print(f"mcp {name}: {path} is not plain JSON (maybe JSONC with comments?), add this by hand: "
+              + json.dumps({"mcp": {name: entry}}))
+        return
+    if cfg is None:
+        print(f"mcp {name}: creating {path} (global config)")
+        if not dry:
+            _write_json(path, {"$schema": "https://opencode.ai/config.json",
+                               "mcp": {name: entry}})
+        return
+    if not isinstance(cfg, dict):
+        print(f"mcp {name}: {path} has an unexpected shape, add this by hand: "
+              + json.dumps({"mcp": {name: entry}}))
+        return
+    mcp = cfg.setdefault("mcp", {})
+    if not isinstance(mcp, dict):
+        print(f"mcp {name}: {path} has a non-object 'mcp' key, add this by hand: "
+              + json.dumps({"mcp": {name: entry}}))
+        return
+    if isinstance(mcp.get("servers"), dict):
+        if name in mcp["servers"]:
+            print(f"mcp {name}: already registered in OpenCode ({path})")
+        else:
+            print(f"mcp {name}: registering in OpenCode ({path}; backup kept)")
+            if not dry:
+                shutil.copy2(path, str(path) + ".jak-backup")
+                mcp["servers"][name] = entry
+                _write_json(path, cfg)
+    else:
+        if name in mcp:
+            print(f"mcp {name}: already registered in OpenCode ({path})")
+        else:
+            print(f"mcp {name}: registering in OpenCode ({path}; backup kept)")
+            if not dry:
+                shutil.copy2(path, str(path) + ".jak-backup")
+                mcp[name] = entry
+                _write_json(path, cfg)
+
+
 def _run(cmd: list[str]) -> int:
     import subprocess
     try:
@@ -229,36 +374,23 @@ def setup_mcp(dry: bool) -> None:
     if not shutil.which("npx"):
         print("WARN  npx not found: MCP servers registered here need Node/npx (install Node 18+)")
     claude = os.environ.get("JAK_CLAUDE_BIN") or shutil.which("claude")
-    oc_cfg = Path(os.path.expanduser(os.environ.get("JAK_OPENCODE_CONFIG") or "~/.config/opencode/opencode.json"))
-    done = False
     for name, spec in servers.items():
         if claude:
-            if _run([claude, "mcp", "get", name]) == 0:
+            base = [sys.executable, claude] if claude.endswith(".py") else [claude]
+            if _run([*base, "mcp", "get", name]) == 0:
                 print(f"mcp {name}: already registered in Claude Code")
             else:
-                cmd = [claude, "mcp", "add", name, "-s", "user", "--", spec["command"], *spec["args"]]
+                cmd = [*base, "mcp", "add", name, "-s", "user", "--", spec["command"], *spec["args"]]
                 print(f"mcp {name}: registering in Claude Code (user scope)")
                 if not dry:
-                    print("   ok" if _run(cmd) == 0 else "   FAILED (run it by hand: " + " ".join(cmd) + ")")
-            done = True
-        if oc_cfg.is_file():
-            try:
-                cfg = json.loads(oc_cfg.read_text())
-            except ValueError:
-                print(f"mcp {name}: {oc_cfg} is not plain JSON, add this by hand: "
-                      + json.dumps({"mcp": {name: {"type": "local", "command": [spec["command"], *spec["args"]]}}}))
-            else:
-                if name in (cfg.get("mcp") or {}):
-                    print(f"mcp {name}: already registered in OpenCode")
-                else:
-                    print(f"mcp {name}: registering in OpenCode ({oc_cfg}; backup kept)")
-                    if not dry:
-                        shutil.copy2(oc_cfg, str(oc_cfg) + ".jak-backup")
-                        cfg.setdefault("mcp", {})[name] = {"type": "local", "command": [spec["command"], *spec["args"]]}
-                        oc_cfg.write_text(json.dumps(cfg, indent=2) + "\n")
-            done = True
-    if not done:
-        print("mcp: neither the claude CLI nor an OpenCode config was found; see mcp/servers.json and docs/EXTERNAL_TOOLS.md")
+                    if _run(cmd) == 0:
+                        print("   ok")
+                    else:
+                        print("   CLI failed, falling back to direct file edit")
+                        register_claude_file(name, spec, dry)
+        else:
+            register_claude_file(name, spec, dry)
+        register_opencode_file(name, spec, dry)
 
 
 def main(argv=None) -> int:

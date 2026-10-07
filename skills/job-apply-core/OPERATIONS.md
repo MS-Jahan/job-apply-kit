@@ -116,6 +116,7 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 
 - Order: **`agent-browser`** (default) → **chrome-devtools MCP** (fallback) → raw CDP scripts (`cdp.py`, last resort).
 - All three attach to the debug browser the user already runs (same profile, logins, extensions). The kit never launches, restarts or kills that browser. Port: `cdp_port`.
+- Debug-browser setup is agent-driven: `browser_setup.py --list` detects installed Chromium browsers (Chrome, Edge, Brave, Chromium — Firefox excluded) and suggests one; after the user picks (several allowed), `--browser <names> --create` writes per-browser launchers (`browser-debug-<name>.bat`/`.sh`) plus desktop shortcuts. The user clicks a shortcut and leaves the browser running.
 - Use the MCP only when agent-browser keeps failing to attach, the daemon cannot be recovered, it cannot drive the page, or the step needs an MCP-only capability (console or network inspection, performance trace, Lighthouse, uid-targeted element work).
 - Chain related commands in one shell call, and wrap each in `timeout`:
   ```bash

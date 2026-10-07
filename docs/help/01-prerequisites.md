@@ -1,6 +1,8 @@
 # 01 — Prerequisites
 
 Back to [index](index.md). Full command reference: `docs/EXTERNAL_TOOLS.md` §§1–2.
+Agent self-install runbook (official sources, per-OS commands, web-search
+fallbacks): `docs/BOOTSTRAP.md`.
 
 ## What you need, by path
 

@@ -7,22 +7,25 @@ tailor|apply|all` tells you exactly what is missing) and verify with the command
 
 | Tool | Needed by | Required for | Install | Auth / config | Verify |
 |---|---|---|---|---|---|
-| Python 3.9+ | every script | all | system package manager | — | `python3 -V` |
+| Python 3.9+ | every script | all | see §3.5 (full agent runbook: `docs/BOOTSTRAP.md`) | — | `python3 -V` |
 | Python packages (`requirements.txt`) | `jak_google.py`, python Google backend, CDP scripts | all | `pip install -r requirements.txt` | — | `python3 -c "import googleapiclient, google.oauth2, websocket"` |
 | `tectonic` | compiling CV/resume/CL PDFs | tailor, apply | see §3.1 | — | `tectonic --version` |
 | `pdflatex` (TeX Live) | fallback compiler | optional | distro TeX Live | — | `pdflatex --version` |
-| `pandoc` | Markdown to DOCX/PDF path (resume-kit) | optional | distro package | — | `pandoc --version` |
-| `poppler-utils` (`pdfinfo`) | page-budget checks everywhere | tailor, apply | distro package | — | `pdfinfo -v` |
-| `gog` (gogcli) | primary Google backend: Gmail drafts, Drive, Sheets | apply (or use the python backend instead) | see §3.2 | `gog auth add <email>` | `gog --version`; `gog auth list` |
+| `pandoc` | Markdown to DOCX/PDF path (resume-kit) | optional | see §3.7 | — | `pandoc --version` |
+| `poppler-utils` (`pdfinfo`) | page-budget checks everywhere | tailor, apply | see §3.7 | — | `pdfinfo -v` |
+| `gog` (gogcli) | primary Google backend: Gmail drafts, Drive, Sheets | apply (or use the python backend instead) | see §3.8 | `gog auth add <email>` | `gog --version`; `gog auth list` |
 | Google account(s) | Gmail drafts, Drive uploads, Sheets tracker | apply | — | see §6 (account roles) | `./doctor.sh --mode apply` |
-| Node 18+ | `agent-browser` | apply | distro/nvm | — | `node -v` |
+| Node 18+ | `agent-browser` | apply | see §3.6 | — | `node -v` |
 | `agent-browser` (npm) | default browser driver for every apply/search skill | apply | `npm install -g agent-browser@latest`; put `~/.npm-global/bin` on `PATH` | attaches to your already-running debug browser | `agent-browser --version` |
-| Debug browser (Chrome/Chromium/Brave) | agent-browser, chrome-devtools MCP, raw CDP | apply | OS package | start with remote debugging (see §4) | `curl -s http://127.0.0.1:<cdp_port>/json/version` |
+| Debug browser (Chrome/Edge/Brave/Chromium) | agent-browser, chrome-devtools MCP, raw CDP | apply | see §3.9 + §4 (`browser_setup.py --create`) | start with remote debugging (see §4) | `curl -s http://127.0.0.1:<cdp_port>/json/version` |
 | `chrome-devtools` MCP | fallback browser driver (console/network/performance/Lighthouse, uid-targeted work) | optional | `npx -y chrome-devtools-mcp@latest`; `install.sh` registers it automatically (see §5) | points at the same debug port | MCP tool list shows `mcp__chrome-devtools__*` |
 | SearXNG MCP | JD/company search, first choice | optional | self-host or hosted instance + MCP config | instance URL | a search tool call returns results |
 | Claude Code or OpenCode | runs the skills | all | vendor docs | — | `claude --version` / `opencode --version` |
 
 ## 2. Install order (clean Linux box)
+
+Per-OS commands, official download URLs, and the agent self-install procedure
+live in `docs/BOOTSTRAP.md` — start there on Windows/macOS. The Linux fast path:
 
 ```bash
 # 1. Python + pip deps
@@ -116,10 +119,89 @@ agent-browser --version
 Expect an `EBADENGINE` warning on Node < 24; the CLI still works. See
 `skills/job-apply-core/references/agent-browser.md` for the full usage guide (connect, tab hygiene,
 the never-kill-the-user's-browser rule, Google Picker file-upload workaround, daemon recovery).
+Upstream repo (flag/source of truth when `--help` and our docs disagree):
+https://github.com/vercel-labs/agent-browser.
+
+### 3.5 Python 3.9+
+
+- Windows: `winget install Python.Python.3.12`, or the installer from
+  https://www.python.org/downloads/ (tick "Add python.exe to PATH"). Run
+  everything in this repo with `py -3` wherever docs say `python3`.
+- macOS: `brew install python@3.12` (https://brew.sh).
+- Linux: `sudo apt install python3 python3-pip` (Debian/Ubuntu) or
+  `sudo dnf install python3 python3-pip` (Fedora).
+- Then: `python3 -m pip install -r requirements.txt`.
+- Web-search fallback: `site:python.org downloads windows`, `python macos homebrew install`.
+
+### 3.6 Node 18+
+
+- Windows: `winget install OpenJS.NodeJS.LTS`, or the LTS installer from
+  https://nodejs.org/en/download (sets PATH itself).
+- macOS: `brew install node@22`.
+- Linux: distro package or nvm — https://github.com/nvm-sh/nvm, then
+  `nvm install --lts`.
+- Web-search fallback: `nodejs download LTS windows`, `nodejs linux install nvm`.
+
+### 3.7 poppler-utils (pdfinfo) and pandoc
+
+- `pdfinfo`: `sudo apt install poppler-utils` (Debian/Ubuntu),
+  `brew install poppler` (macOS), Windows: `conda install poppler` or
+  `choco install poppler`. Without it, page-budget checks fall back to reading
+  the PDF directly. Fallback query: `poppler pdfinfo windows install`.
+- `pandoc` (optional): OS package, or the official installer at
+  https://pandoc.org/installing.html. Fallback query: `pandoc install download`.
+
+### 3.8 gog binaries (primary Google backend)
+
+Docs: https://gogcli.sh (install: https://gogcli.sh/install.html). Source and
+release zips (including `gogcli_*_windows_amd64.zip` / `windows_arm64`):
+https://github.com/openclaw/gogcli/releases/latest.
+
+- macOS: `brew install openclaw/tap/gogcli`.
+- Any OS with Go: `go install github.com/openclaw/gogcli/cmd/gog@latest`.
+- Windows (no package manager): download the `windows_amd64` (or
+  `windows_arm64`) zip from the releases page, extract `gog.exe`, put that
+  directory on PATH.
+- Then `gog auth add you@example.com` (interactive OAuth; needs a Google Cloud
+  Desktop OAuth client — see §3.2). Fallback query: `gogcli github releases install gog`.
+
+### 3.9 Chromium browsers (what browser_setup.py looks for)
+
+Only Chromium-based browsers are supported (Firefox has no CDP driver in this
+kit). Detection order and download pages:
+
+| Browser | Download | Notes |
+|---|---|---|
+| Google Chrome | https://www.google.com/chrome/ | suggested when present |
+| Microsoft Edge | https://www.microsoft.com/edge/download | preinstalled on most Windows machines |
+| Brave | https://brave.com/download/ | — |
+| Chromium | https://www.chromium.org/getting-involved/download-chromium/ | no auto-update; last resort |
+
+`doctor.py` reports which of these it finds. `browser_setup.py --list` does the
+detection for the agent; `--create` writes the debug-mode launchers (see §4).
+Re-run detection after installing. Fallback query: `download chrome windows`,
+`download brave browser`, etc.
 
 ## 4. Starting your debug browser
 
-The kit never launches or manages your browser. Start your own with remote debugging enabled, log in
+Preferred (agent or human): generate launchers instead of typing commands.
+
+```bash
+python3 skills/job-apply-core/scripts/browser_setup.py --list
+python3 skills/job-apply-core/scripts/browser_setup.py --browser chrome --create
+```
+
+`--list` prints every Chromium-based browser found and marks the suggestion.
+`--create` writes one launcher per chosen browser into the kit directory
+(`browser-debug-<name>.bat` on Windows, `.sh` elsewhere; `--port` overrides
+the config `cdp_port`) plus a double-clickable desktop shortcut per browser.
+The user clicks the shortcut, logs into LinkedIn/Facebook/Discord/BDJobs/Google
+once in that profile, and leaves it running. Several browsers may be selected
+(`--browser chrome,brave` or `--browser all`). Details and flags:
+`docs/help/03-browser-setup.md`, `docs/BOOTSTRAP.md` §3.
+
+Manual fallback (the launchers do exactly this). The kit never launches or
+manages your browser. Start your own with remote debugging enabled, log in
 to LinkedIn/Facebook/Discord/BDJobs/Google once in that profile, and leave it running.
 
 | OS | Example |
@@ -141,24 +223,53 @@ listening (`curl http://127.0.0.1:<port>/json/version`) before anything else.
 ## 5. chrome-devtools MCP (fallback browser driver)
 
 `agent-browser` is the default for every skill; the chrome-devtools MCP is the fallback
-(OPERATIONS.md#browser). `mcp/servers.json` in this repo declares it, and `install.sh` registers it
-automatically in Claude Code (user scope, so it applies to every project) and in OpenCode's config if
-present — it never overwrites an existing registration. To do it by hand:
+(OPERATIONS.md#browser). The single source of truth for the server definition is
+`mcp/servers.json` in this repo — `install.py` only renders the CDP port from your
+config (`cdp_port`, default 9222) into it. Do not hardcode the command/args elsewhere;
+if the upstream format changes, update `mcp/servers.json` and re-run
+`./install.sh --setup-mcp-only`.
+
+`install.sh` registers it automatically, creating the config files when they are
+missing and never overwriting an existing entry (a `.jak-backup` copy is kept
+before every merge). Re-run any time with `./install.sh --setup-mcp-only`
+(`--no-mcp` skips it, `--dry-run` previews it).
+
+Where the entries live (researched from the official docs, Oct 2026):
+
+| Client | File | Key | Sources |
+|---|---|---|---|
+| Claude Code, user scope (all projects) | `~/.claude.json` (Windows `%USERPROFILE%\.claude.json`; `$CLAUDE_CONFIG_DIR/.claude.json` when that env var is set) | top-level `mcpServers` | `code.claude.com/docs/en/mcp-quickstart`, `code.claude.com/docs/en/mcp-servers.md` |
+| Claude Code, project scope (team-shared) | `.mcp.json` in the project root (shipped in this repo) | top-level `mcpServers` | same as above |
+| OpenCode, global | `~/.config/opencode/opencode.json` (`$OPENCODE_CONFIG` overrides) | `mcp` (v1) / `mcp.servers` (v2) | `opencode.ai/docs/config/`, `opencode.ai/docs/mcp-servers/` (v1), `opencode.ai/v2/docs/mcp-servers/` (v2) |
+
+Do NOT put Claude Code servers in `~/.claude/settings.json`, `settings.local.json`,
+`~/.claude/mcp.json`, or `%APPDATA%\Claude\mcp.json` (Claude Desktop path) — Claude
+Code ignores them there. The preferred hands-off route is always
+`claude mcp add -s user`, which is what `install.sh` uses when the `claude` CLI
+exists; the direct file edit is only its fallback.
+
+To do it by hand:
 
 ```bash
 claude mcp add chrome-devtools -s user -- npx -y chrome-devtools-mcp@latest --browserUrl http://127.0.0.1:9222
 ```
 
-Or as JSON (Claude Code `.mcp.json` / `~/.claude.json`):
+Or as JSON (Claude Code `.mcp.json` / `~/.claude.json` top-level `mcpServers`):
 
 ```json
 {"mcpServers": {"chrome-devtools": {"command": "npx", "args": ["-y", "chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:9222"]}}}
 ```
 
-OpenCode (`opencode.json`):
+OpenCode v1 (`opencode.json`):
 
 ```json
 {"mcp": {"chrome-devtools": {"type": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:9222"]}}}
+```
+
+OpenCode v2 (same entry under `mcp.servers`):
+
+```json
+{"mcp": {"servers": {"chrome-devtools": {"type": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:9222"]}}}}
 ```
 
 Both `--browserUrl` and the upstream-documented `--browser-url` spelling are accepted. `--autoConnect`

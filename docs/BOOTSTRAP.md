@@ -1,0 +1,175 @@
+# Bootstrap runbook (humans and agents)
+
+Zero-to-working setup for job-apply-kit. Humans read it top to bottom; an agent
+treats section 0 as its standing procedure and uses the tables as its install
+index. Command reference stays in `docs/EXTERNAL_TOOLS.md`; this page is the
+order of operations.
+
+## 0. Agent procedure (standing instructions)
+
+When the user asks you to set up, fix, or verify their environment:
+
+1. **Detect the OS** (section 1). Every install command below is OS-specific —
+   never run an `apt` command on Windows or a `winget` command on Linux.
+2. **Run the status check first, always:**
+   `python doctor.py --mode all` (on Windows use `py -3`; the `.sh` wrappers
+   need Git Bash or WSL). Work through each `MISSING` line top to bottom.
+3. **For each missing tool, in this order:**
+   a. Use the OS package manager command from section 2 (winget/choco on
+      Windows, Homebrew on macOS, apt/dnf on Linux).
+   b. If no package exists, download from the **official source URL** in
+      section 2 — never from a random blog, mirror, or video description.
+   c. If the URL or command no longer works (projects move), run a web search
+      with the **fallback query** from section 2 and re-anchor on the official
+      domain (python.org, nodejs.org, tectonic-typesetting.github.io,
+      pandoc.org, github.com/openclaw/gogcli, google.com/chrome,
+      microsoft.com, brave.com).
+4. **Verify after every install** with the Verify command in the table before
+   moving on. A tool is done only when `doctor.py` flips it to OK.
+5. **Browsers (section 3):** detect with `browser_setup.py --list`, tell the
+   user what was found and which one you suggest, ask which to use (several
+   allowed), then generate launchers + desktop shortcuts with `--create`.
+   Never launch or kill the user's everyday browser yourself — hand them the
+   shortcut and let them click it.
+6. **Finish the kit:** `./install.sh` (or `python install.py`), then config,
+   then `sheet_init.py` — see section 4.
+
+Rules: ask before installing anything system-wide the user did not request;
+prefer user-scope installs (pip `--user`, npm global prefix, portable zips).
+If an install needs admin rights or a reboot, say so instead of pushing ahead.
+
+## 1. Detect the OS
+
+```bash
+python3 -c "import platform; print(platform.system(), platform.machine())"
+# Windows -> install with winget (preferred) or Chocolatey, download .exe/.msi/.zip
+# Darwin  -> install with Homebrew (https://brew.sh)
+# Linux   -> install with the distro manager (apt, dnf, pacman)
+```
+
+## 2. Tool catalog
+
+| Tool | Why the kit needs it | Official source | Verify |
+|---|---|---|---|
+| Python 3.9+ | every script | https://www.python.org/downloads/ | `python3 -V` (Windows: `py -3 -V`) |
+| Python packages | Google backend, CDP scripts | `requirements.txt` (PyPI) | `python3 -c "import googleapiclient, google.oauth2, websocket"` |
+| Node 18+ | runs `agent-browser` | https://nodejs.org/en/download | `node -v` |
+| `agent-browser` | drives the debug browser | npm: `vercel-labs/agent-browser` | `agent-browser --version` |
+| `tectonic` | compiles CV/resume/CL PDFs | https://tectonic-typesetting.github.io | `tectonic --version` |
+| `poppler-utils` (`pdfinfo`) | page-budget checks | OS package (below) | `pdfinfo -v` |
+| `pandoc` | Markdown to DOCX/PDF path | https://pandoc.org/installing.html | `pandoc --version` |
+| `gog` | Gmail drafts, Drive, Sheets | https://github.com/openclaw/gogcli (docs: https://gogcli.sh) | `gog --version`; `gog auth list` |
+| Chromium browser | debug-mode browsing | https://www.google.com/chrome/ etc. (section 3) | `browser_setup.py --list` |
+| Claude Code or OpenCode | runs the skills | https://code.claude.com/docs, https://opencode.ai/docs | `claude --version` / `opencode --version` |
+
+### 2.1 Python 3.9+
+
+- Windows: `winget install Python.Python.3.12` (or the python.org installer;
+  tick "Add python.exe to PATH"). Fallback query: `site:python.org downloads windows`.
+- macOS: `brew install python@3.12`. Fallback query: `python macos homebrew install`.
+- Linux: `sudo apt install python3 python3-pip` (Debian/Ubuntu) or
+  `sudo dnf install python3 python3-pip` (Fedora).
+- Then: `python3 -m pip install -r requirements.txt` (Windows: `py -3 -m pip install -r requirements.txt`).
+
+### 2.2 Node 18+ and agent-browser
+
+- Windows: `winget install OpenJS.NodeJS.LTS` (nodejs.org LTS installer works
+  too and sets PATH itself). Fallback query: `nodejs download LTS windows`.
+- macOS: `brew install node@22`. Fallback query: `nodejs macos install`.
+- Linux: distro package or nvm (https://github.com/nvm-sh/nvm):
+  `nvm install --lts`. Fallback query: `nodejs linux install nvm`.
+- Then: `npm install -g agent-browser@latest` and put the global bin dir on
+  PATH (`~/.npm-global/bin` on Linux/macOS; automatic on Windows).
+  Upstream repo for flag changes: https://github.com/vercel-labs/agent-browser.
+
+### 2.3 tectonic, poppler-utils, pandoc
+
+- `tectonic` (single static binary, no TeX Live needed):
+  Unix: `curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh`;
+  Windows PowerShell: the two-line `drop-ps1` command at
+  https://tectonic-typesetting.github.io/en-US/install.html;
+  or `conda install tectonic`, or `winget install tectonic.tectonic`.
+  Direct zips (look for `x86_64-pc-windows-msvc` on Windows) at
+  https://github.com/tectonic-typesetting/tectonic/releases.
+  Fallback query: `tectonic typesetting install download`.
+- `poppler-utils` (`pdfinfo`): `sudo apt install poppler-utils` /
+  `brew install poppler` / Windows: `conda install poppler` or
+  `choco install poppler`. Fallback query: `poppler pdfinfo windows install`.
+- `pandoc` (optional): OS package or the official installer at
+  https://pandoc.org/installing.html. Fallback query: `pandoc install download`.
+
+### 2.4 gog (primary Google backend)
+
+- Docs: https://gogcli.sh (install page: https://gogcli.sh/install.html).
+  Releases (Windows `gogcli_*_windows_amd64.zip`, macOS, Linux):
+  https://github.com/openclaw/gogcli/releases/latest.
+- macOS: `brew install openclaw/tap/gogcli`. Any OS with Go:
+  `go install github.com/openclaw/gogcli/cmd/gog@latest`.
+- After install: needs a Google Cloud Desktop OAuth client + `gog auth add`
+  (interactive, user does this). The bundled Python backend
+  (`google_setup.py`) is the no-binary alternative — see
+  `docs/EXTERNAL_TOOLS.md` section 3.3.
+- Fallback query: `gogcli github releases install gog`.
+
+### 2.5 Chromium browsers
+
+Covered in section 3 below. Firefox is not supported (no CDP driver in the
+kit). If no browser is found, point the user at the official download pages
+and re-run detection afterwards.
+
+## 3. Debug browser (agent-driven setup)
+
+The kit never launches or kills the user's browser. It attaches to a browser
+the user started with remote debugging. The agent sets this up with:
+
+```bash
+python3 skills/job-apply-core/scripts/browser_setup.py --list
+```
+
+- Prints every Chromium-based browser found (Chrome, Edge, Brave, Chromium)
+  with install paths and marks the suggested one (Chrome first, then Edge,
+  Brave, Chromium). Exit 1 + download links when none is found.
+- The agent tells the user what was found, recommends the suggested browser,
+  and asks which to use. Several may be selected.
+- Then, for the chosen names:
+
+```bash
+python3 skills/job-apply-core/scripts/browser_setup.py --browser chrome,brave --create
+```
+
+This writes one launcher per browser into the kit directory
+(`browser-debug-chrome.bat` on Windows, `browser-debug-chrome.sh` on
+Linux/macOS — port defaults to config `cdp_port`, override with `--port`),
+each starting its browser with `--remote-debugging-port` and a dedicated
+persistent profile (`jak-browser-<name>`, so logins survive restarts), plus a
+double-clickable shortcut for each on the desktop
+(`JAK <label> (debug).lnk` / `.desktop` / `.command`).
+`--dry-run` previews, `--no-shortcuts` skips the desktop links,
+`--desktop-dir` / `--out-dir` relocate the outputs.
+
+The user clicks the shortcut, logs into their sites once, and leaves the
+browser running. The agent verifies with
+`curl http://127.0.0.1:9222/json/version` (Windows: `curl.exe`) and
+`agent-browser connect 9222 && agent-browser tab list`.
+Manual commands for every OS are in `docs/EXTERNAL_TOOLS.md` section 4;
+the click-through guide is in `docs/help/03-browser-setup.md`.
+
+## 4. Finish the kit
+
+```bash
+./install.sh                    # or: python install.py  (registers skills + MCP servers)
+python doctor.py --mode all     # or: py -3 doctor.py --mode all
+```
+
+Then the personal config (`config.example.md` is the template; easiest is
+telling the agent "set up my job-apply-kit config from my CV at <file/url>"),
+then the one-time tracker setup
+(`python3 skills/job-apply-core/scripts/sheet_init.py`), then `/create-template`.
+
+## 5. When the internet moves on
+
+Every URL above was live when written. If one rots, the agent procedure is:
+search the fallback query, pick the official domain result, and update this
+file plus `docs/EXTERNAL_TOOLS.md` so the next run works. `install.py` reads
+server definitions from `mcp/servers.json` (never hardcode them), and
+`doctor.py` is the ground truth for "what is still missing".

@@ -30,6 +30,9 @@ templates/
 .cache/
 SESSIONS.md
 
+# Generated debug-browser launchers (contain local paths; recreate with browser_setup.py)
+browser-debug-*
+
 # Python / OS / editor / agent state
 __pycache__/
 *.pyc

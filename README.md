@@ -25,12 +25,16 @@ their own CV and every submission under their own final control.
 
 ## Prerequisites
 
-See `docs/EXTERNAL_TOOLS.md` for the full matrix and install instructions. Short version:
+Setting up from scratch (or driving the agent to do it)? Follow
+`docs/BOOTSTRAP.md` — per-OS commands, official download sources, and the
+agent self-install procedure. Short version
+(full matrix in `docs/EXTERNAL_TOOLS.md`):
 
 - Python 3.9+ and its packages (`pip install -r requirements.txt`)
 - `tectonic` (PDF compiler) and `poppler-utils` (`pdfinfo`)
-- For the apply/search skills: Node 18+, `agent-browser`, a debug-mode browser you start yourself, and
-  either `gog` or the bundled Python OAuth backend for Google (Gmail drafts, Drive, Sheets)
+- For the apply/search skills: Node 18+, `agent-browser`, a debug-mode browser
+  (the agent detects yours and makes desktop shortcuts via `browser_setup.py`),
+  and either `gog` or the bundled Python OAuth backend for Google
 - Claude Code or OpenCode
 
 ## Install
