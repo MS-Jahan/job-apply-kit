@@ -25,6 +25,11 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
   registry, `tasklist` checks) — the kit scripts already do that internally.
   Do not hand-roll PowerShell for kit or agent commands.
 - Linux/macOS: use the normal shell (`python3`, `timeout`, pipes as usual).
+- Windows Python: use the `py` launcher by default (`py -3 script.py`) — never
+  bare `python`/`python3`, which may resolve to the Microsoft Store stub or an
+  unrelated install. If `py` picks an unsupported version, bypass it with the
+  full binary path (e.g. `%LocalAppData%\Programs\Python\Python310\python.exe`);
+  verify with `py -0p` (lists installed versions) and `py -3 -c "import sys; print(sys.version)"`.
 
 <a id="precedence"></a>
 ## 1. Precedence
