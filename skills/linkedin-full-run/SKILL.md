@@ -1,6 +1,6 @@
 ---
-name: li-full-run
-description: Full LinkedIn pipeline via three scripts (li1_extract, li2_details, li3_apply). Sweeps LinkedIn post-search results (Posts filter, Latest sort set in the URL), captures full post text, lets the agent review the CSV, enriches approved rows, then stages each approved job: tracker check first, Gmail draft (never sent), or form or link filled and staged with the resume uploaded (never submitted). Invoke with /li-full-run.
+name: linkedin-full-run
+description: Full LinkedIn pipeline via three scripts (li1_extract, li2_details, li3_apply). Sweeps LinkedIn post-search results (Posts filter, Latest sort set in the URL), captures full post text, lets the agent review the CSV, enriches approved rows, then stages each approved job: tracker check first, Gmail draft (never sent), or form or link filled and staged with the resume uploaded (never submitted). Invoke with /linkedin-full-run.
 user-invocable: true
 ---
 
@@ -11,7 +11,7 @@ Config keys read: `linkedin_queries`, `max_experience_years`, `min_salary`, `cur
 `timezone`, `templates_dir`, `name`, `name_file`, `email_signature`, `sheet_id`, `drive_folder_id`, `cdp_port`, `workspace`.
 Scripts: `{{SKILL_DIR}}/scripts/`. State root: `<workspace>/JDs/linkedin/<run-date>/`.
 
-The source is LinkedIn **post search results**, not saved posts (`check-li-saved` owns saved posts; the two skills share
+The source is LinkedIn **post search results**, not saved posts (`check-linkedin-saved` owns saved posts; the two skills share
 `JDs/linkedin-saved/applied_cache.json`, see `{{CORE_DIR}}/references/shared-caches.md`). Queries come from `linkedin_queries`;
 `linkedin-job-search` documents how to write them.
 

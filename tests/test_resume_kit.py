@@ -10,7 +10,7 @@ import _paths
 from _paths import REPO
 
 RK = REPO / "skills" / "resume-kit"
-RESUME_SKILLS = ["make-resume", "make-cl", "critique", "edit-resume", "setup-build-kb", "setup-extract"]
+RESUME_SKILLS = ["make-resume", "make-cover-letter", "critique", "edit-resume", "setup-build-kb", "setup-extract"]
 
 
 class ResumeKitContentTests(unittest.TestCase):

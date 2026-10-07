@@ -1,6 +1,6 @@
 # Processing a NEW job end to end (shared by the scan skills)
 
-Used by `check-li-saved`, `check-fb-saved`, `check-ph-discord` and `check-image-batch`. The scan skill finds
+Used by `check-linkedin-saved`, `check-facebook-saved`, `check-ph-discord` and `check-image-batch`. The scan skill finds
 and filters items; this is what happens to each NEW job. Universal rules apply throughout:
 `OPERATIONS.md` (#accounts #truth #documents #tracking #browser).
 

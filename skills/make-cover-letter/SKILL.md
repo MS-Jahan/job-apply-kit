@@ -1,10 +1,10 @@
 ---
-name: make-cl
+name: make-cover-letter
 description: Generate a tailored cover letter from an existing session file and finished resume/CV (LaTeX or Markdown formats). Deep-tailoring track (Workflow B), paired with make-resume/critique/edit-resume.
 user-invocable: true
 ---
 
-# /make-cl
+# /make-cover-letter
 
 **User input:** `$ARGUMENTS`
 

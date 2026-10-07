@@ -7,14 +7,14 @@ Back to [index](index.md).
 | Skill | Source | Does it apply? |
 |---|---|---|
 | `bdjobs-full-run` | BDJobs search pages | Yes — portal Apply (the one authorized exception) or Gmail draft, + tracker row |
-| `li-full-run` | LinkedIn **post search** results | Stages only — Gmail draft or form left at Submit, + tracker row |
-| `linkedin-job-search` | LinkedIn post search | No — saves matching posts only; `check-li-saved` processes them later |
-| `check-li-saved` | LinkedIn **saved posts** page | Stages only (draft or form at Submit), + tracker row |
-| `check-fb-saved` | Facebook saved items | Stages only, + tracker row |
+| `linkedin-full-run` | LinkedIn **post search** results | Stages only — Gmail draft or form left at Submit, + tracker row |
+| `linkedin-job-search` | LinkedIn post search | No — saves matching posts only; `check-linkedin-saved` processes them later |
+| `check-linkedin-saved` | LinkedIn **saved posts** page | Stages only (draft or form at Submit), + tracker row |
+| `check-facebook-saved` | Facebook saved items | Stages only, + tracker row |
 | `check-discord-jobs` | Discord job channels | Stages only, + tracker row |
 | `check-image-batch` | Pasted job-post screenshots | Stages only, + tracker row |
 
-`li-full-run` and `check-li-saved` overlap on purpose but never collide: the first owns post-search
+`linkedin-full-run` and `check-linkedin-saved` overlap on purpose but never collide: the first owns post-search
 results, the second owns the saved-posts page. They share one contract file,
 `JDs/linkedin-saved/applied_cache.json` (documented in
 `skills/job-apply-core/references/shared-caches.md`), so a job found by either is never processed

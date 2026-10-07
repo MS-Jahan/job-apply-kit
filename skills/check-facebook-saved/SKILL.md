@@ -1,6 +1,6 @@
 ---
-name: check-fb-saved
-description: Scan Facebook saved items (https://www.facebook.com/saved/) via agent-browser over CDP, extract at least 50 saved posts with scrolling, open only posts that look like job posts, cross-check the tracker and local caches, and process NEW jobs end to end (template resume, email draft or staged form, tracker row; never submit). Invoke with /check-fb-saved.
+name: check-facebook-saved
+description: Scan Facebook saved items (https://www.facebook.com/saved/) via agent-browser over CDP, extract at least 50 saved posts with scrolling, open only posts that look like job posts, cross-check the tracker and local caches, and process NEW jobs end to end (template resume, email draft or staged form, tracker row; never submit). Invoke with /check-facebook-saved.
 user-invocable: true
 ---
 

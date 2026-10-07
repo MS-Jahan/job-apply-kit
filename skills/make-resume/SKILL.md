@@ -55,7 +55,7 @@ Read `{{RESUME_KIT_DIR}}/reference/shared_ops.md` for session startup and deriva
    - Phase 0 DONE, Phase 1 PENDING: resume at Phase 1.
    - Phase 1 DONE: resume at the Budget Gate.
    - Phase 2 IN_PROGRESS: read the generated file, check which sections exist, resume from the checkpoint.
-   - Phase 2 DONE: "Resume already done. Run /make-cl next." Show the next command. Stop.
+   - Phase 2 DONE: "Resume already done. Run /make-cover-letter next." Show the next command. Stop.
 4. If no session file: detect single-job or multi-job batch mode and proceed to Phase 0.
 
 ---
@@ -173,7 +173,7 @@ Present: resume compilation summary (pages, char-count results, any violations f
 
 "Resume compiled and verified. Next steps:
 1. /clear
-2. [exact /make-cl command with session file path]"
+2. [exact /make-cover-letter command with session file path]"
 
 ## Post-Generation Checklist & Verification
 

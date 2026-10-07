@@ -47,8 +47,8 @@ class InstalledLayoutTests(unittest.TestCase):
         scripts = [
             [str(dest / "job-apply-core/scripts/jak_config.py"), "--check"],
             [str(dest / "bdjobs-full-run/scripts/bd3_filter_apply.py"), "salary", "--text", "BDT 45,000 - 70,000"],
-            [str(dest / "li-full-run/scripts/li3_apply.py"), "--help"],
-            [str(dest / "li-full-run/scripts/li1_extract.py"), "--help"],
+            [str(dest / "linkedin-full-run/scripts/li3_apply.py"), "--help"],
+            [str(dest / "linkedin-full-run/scripts/li1_extract.py"), "--help"],
             [str(dest / "check-discord-jobs/scripts/scan_channel.py"), "--help"],
             [str(dest / "job-apply-core/scripts/sheet_append.py"), "append", '{"company": "A"}', "--dry-run"],
             [str(dest / "job-apply-core/scripts/template_index.py"), "list"],

@@ -2,6 +2,8 @@
 
 Back to [index](index.md). Template: `config.example.md` in the kit repo.
 Loader: `skills/job-apply-core/scripts/jak_config.py` (`--check`, `--show`, `--get KEY`).
+Missing keys the example gained later? `jak_config.py --sync-keys` adds them without
+touching existing values.
 
 Location: `$JAK_CONFIG`, else `~/.config/job-apply-kit/config.md`. One markdown
 file, outside the repo, never committed — it holds phone numbers, emails and

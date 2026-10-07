@@ -14,8 +14,8 @@ and the two systems are never mixed in one document, OPERATIONS #format).
 
 ## Purpose
 
-Templates in `templates_dir` are what every apply skill (`bdjobs-full-run`, `li-full-run`,
-`check-li-saved`, `check-fb-saved`, `check-discord-jobs`, `check-image-batch`) picks from by default
+Templates in `templates_dir` are what every apply skill (`bdjobs-full-run`, `linkedin-full-run`,
+`check-linkedin-saved`, `check-facebook-saved`, `check-discord-jobs`, `check-image-batch`) picks from by default
 (OPERATIONS #documents: template-first, no customization unless asked). This skill is how a user builds
 that set in the first place, and how they refresh it as their CV changes. It is not run per job post —
 run it once per role category, and again when the live CV gains enough new material to warrant it.

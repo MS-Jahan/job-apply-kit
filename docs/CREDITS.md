@@ -13,7 +13,7 @@ preserved in `skills/humanizer/LICENSE`.
 
 ## resume-kit (deep-tailoring track)
 
-`skills/resume-kit/` and the six skills that depend on it (`make-resume`, `make-cl`, `critique`,
+`skills/resume-kit/` and the six skills that depend on it (`make-resume`, `make-cover-letter`, `critique`,
 `edit-resume`, `setup-extract`, `setup-build-kb`) descend from a resume-tailoring skill set by Varun
 Ramesh, combining the character-budget / char-count-gate system, the critique framework, and the
 knowledge-base build pipeline (`/setup-extract` -> `/setup-build-kb` -> `/make-resume`). The content
@@ -22,6 +22,6 @@ recovery/safety logic from an earlier fork of the same skill set.
 
 ## Everything else
 
-The browser-automation skills (`bdjobs-full-run`, `li-full-run`, `linkedin-job-search`,
-`check-li-saved`, `check-fb-saved`, `check-discord-jobs`, `check-image-batch`), `job-apply-core`, and
+The browser-automation skills (`bdjobs-full-run`, `linkedin-full-run`, `linkedin-job-search`,
+`check-linkedin-saved`, `check-facebook-saved`, `check-discord-jobs`, `check-image-batch`), `job-apply-core`, and
 `create-template` are original to this kit.

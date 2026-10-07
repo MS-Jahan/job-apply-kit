@@ -1,6 +1,6 @@
 ---
 name: setup-build-kb
-description: Synthesize extractions and existing resumes into experience files, bundles, and support files for resume tailoring. Builds the knowledge base the deep-tailoring track (make-resume/make-cl/critique/edit-resume) reads from.
+description: Synthesize extractions and existing resumes into experience files, bundles, and support files for resume tailoring. Builds the knowledge base the deep-tailoring track (make-resume/make-cover-letter/critique/edit-resume) reads from.
 user-invocable: true
 ---
 

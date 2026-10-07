@@ -91,6 +91,23 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(jak_config.main(["--config", str(p), "--check"]), 1)
             self.assertEqual(jak_config.main(["--config", str(Path(d) / "nope.md"), "--check"]), 1)
 
+    def test_sync_keys_adds_missing_never_overwrites(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "c.md"
+            p.write_text("## Identity\n- **name:** Ada\n- **cdp_port:** 9333\n")
+            added = jak_config.sync_keys(p)
+            self.assertIn("discord_channels", added)
+            self.assertIn("sheet_url", added)
+            self.assertNotIn("name", added)
+            self.assertNotIn("cdp_port", added)
+            text = p.read_text()
+            self.assertIn("- **name:** Ada", text)
+            self.assertIn("- **cdp_port:** 9333", text)
+            cfg = jak_config.Config(jak_config.parse(text))
+            self.assertEqual(cfg.get("name"), "Ada")
+            self.assertIsNone(cfg.get("discord_channels"))
+            self.assertEqual(jak_config.sync_keys(p), [])
+
 
 if __name__ == "__main__":
     unittest.main()

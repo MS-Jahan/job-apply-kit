@@ -1,6 +1,6 @@
 ---
-name: check-li-saved
-description: Scan LinkedIn saved posts (https://www.linkedin.com/my-items/saved-posts/) via agent-browser over CDP, extract at least 50 saved posts with scrolling, open only posts that look like job posts, cross-check the tracker and local caches, and process NEW jobs end to end (template resume, email draft or staged form, tracker row; never submit). Invoke with /check-li-saved.
+name: check-linkedin-saved
+description: Scan LinkedIn saved posts (https://www.linkedin.com/my-items/saved-posts/) via agent-browser over CDP, extract at least 50 saved posts with scrolling, open only posts that look like job posts, cross-check the tracker and local caches, and process NEW jobs end to end (template resume, email draft or staged form, tracker row; never submit). Invoke with /check-linkedin-saved.
 user-invocable: true
 ---
 
@@ -20,7 +20,7 @@ Config keys read: `cv_source`, `templates_dir`, `sheet_id`, `drive_folder_id`, `
 ## Cache
 Root `JDs/linkedin-saved/`.
 - `seen_posts.json` (this skill's file): array of `{ "post_url", "title", "subtitle", "company", "position", "deadline", "apply_method": "email|link|form|easy-apply", "contact", "verdict": "new|applied|drafted|skipped-duplicate|expired|not-a-job", "sheet_row", "output_dir", "first_seen", "processed_at" }`.
-- `applied_cache.json`: SHARED with `li-full-run` (`{ "company+position": { sheet_row, date, how } }`); never delete another skill's entries.
+- `applied_cache.json`: SHARED with `linkedin-full-run` (`{ "company+position": { sheet_row, date, how } }`); never delete another skill's entries.
 
 ## Step 1: extract saved items
 - Open the saved-posts page in a new tab; confirm the list rendered (a redirect to login is a hard stop).

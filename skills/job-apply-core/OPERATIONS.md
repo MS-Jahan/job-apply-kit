@@ -103,7 +103,7 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 
 **Template default.** Unless the user explicitly asks for a customized document, do not create one. Pick the best-fitting template from `templates_dir` using its `INDEX.md` (match the post's keywords to each category), and attach it as-is. Rename-only: `cp` the template PDF to the per-company name from section 5; no edits, no recompile; check `pdfinfo` after copying. If no template fits well or `templates_dir` is empty, offer `/create-template`.
 
-**Customization exception.** Create a customized document only if (1) the user asks, or (2) the post needs a combined skill set no single template covers. Then: read the post fully, read the sources, use the resume skills (`make-resume`, `make-cl`, `edit-resume`, `critique`), run the **humanizer** on all prose before compiling, and verify the page budget.
+**Customization exception.** Create a customized document only if (1) the user asks, or (2) the post needs a combined skill set no single template covers. Then: read the post fully, read the sources, use the resume skills (`make-resume`, `make-cover-letter`, `edit-resume`, `critique`), run the **humanizer** on all prose before compiling, and verify the page budget.
 
 **Email applications.**
 - An email body is mandatory for every email application.
@@ -179,12 +179,12 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 | `job-apply-core` | this file, config setup, shared scripts |
 | `humanizer` | strip AI-isms from prose |
 | `create-template` | generate the user's own CV, resume and cover-letter templates |
-| `make-resume`, `make-cl`, `critique`, `edit-resume` | tailored documents for a specific post (deep-tailoring flow) |
+| `make-resume`, `make-cover-letter`, `critique`, `edit-resume` | tailored documents for a specific post (deep-tailoring flow) |
 | `setup-extract`, `setup-build-kb` | build the optional knowledge base for the deep-tailoring flow |
 | `bdjobs-full-run` | BDJobs scripted pipeline: search, save, decide, apply or draft |
-| `li-full-run` | LinkedIn post-search pipeline: sweep, review, enrich, stage |
+| `linkedin-full-run` | LinkedIn post-search pipeline: sweep, review, enrich, stage |
 | `linkedin-job-search` | save matching LinkedIn posts (save-only) |
-| `check-li-saved`, `check-fb-saved`, `check-ph-discord`, `check-image-batch` | scan a source and process new jobs end to end |
+| `check-linkedin-saved`, `check-facebook-saved`, `check-ph-discord`, `check-image-batch` | scan a source and process new jobs end to end |
 
 <a id="logging"></a>
 ## 13. Session log

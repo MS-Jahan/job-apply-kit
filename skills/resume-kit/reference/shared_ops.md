@@ -1,6 +1,6 @@
 # Shared Operations — All Skills
 
-> Referenced by `/make-resume`, `/make-cl`, `/critique`, and `/edit-resume`.
+> Referenced by `/make-resume`, `/make-cover-letter`, `/critique`, and `/edit-resume`.
 > Read this file at skill startup. Skills reference specific sections by name.
 
 ---
@@ -11,9 +11,9 @@ Standard JD pipeline uses 3 sessions for token efficiency + quality:
 
 Session 1: `/make-resume JDs/JD_xyz.txt`
   → Phase 0 (research) → STOP → Phase 1 (bullets) → STOP → Phase 2 (resume) → STOP
-  → "Resume done. Copy after /clear: /make-cl output/<Folder>/session_<name>.md"
+  → "Resume done. Copy after /clear: /make-cover-letter output/<Folder>/session_<name>.md"
 
-Session 2: `/make-cl output/<Folder>/session_<name>.md`
+Session 2: `/make-cover-letter output/<Folder>/session_<name>.md`
   → Load context → generate CL → compile → STOP
   → "CL done. Copy after /clear: /critique output/<Folder>/session_<name>.md"
 
@@ -53,7 +53,7 @@ Every JD gets a persistent session file: `output/<FolderName>/session_<name>.md`
 
 ---
 
-## Session File Derivation (for /make-cl, /critique, and /edit-resume)
+## Session File Derivation (for /make-cover-letter, /critique, and /edit-resume)
 
 From .tex path: strip `e2e_` prefix (if present) + `_resume.tex`/`_cv.tex`/`_cover_letter.tex` suffix → `<name>`.
 
@@ -69,7 +69,7 @@ Example: `output/Acme/e2e_acme_engineer_resume.tex` → `acme_engineer` → look
 **If still not found:**
 - `/edit-resume`: Tell user — "No session file exists. Run `/make-resume` first, or I can create a minimal one (JD Info + Framing Strategy inferred from .tex content)."
 - `/critique`: Do 1-2 web searches to build minimal context. Note in critique: "No session file — framing context is approximate."
-- `/make-cl`: Tell user — "No session file exists. Run `/make-resume` first."
+- `/make-cover-letter`: Tell user — "No session file exists. Run `/make-resume` first."
 
 ---
 

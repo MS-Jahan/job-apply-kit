@@ -1,6 +1,6 @@
 # Cover Letter Generation — Reference
 
-> CL-specific rules. Read by `/make-cl` and `/edit-resume` (for CL edits).
+> CL-specific rules. Read by `/make-cover-letter` and `/edit-resume` (for CL edits).
 > Shared rules (provenance, anti-fabrication, LaTeX notation): `{{CORE_DIR}}/OPERATIONS.md`
 
 ---

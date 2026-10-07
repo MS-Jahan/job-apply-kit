@@ -1,6 +1,6 @@
 ---
 name: critique
-description: Critique existing resume/CV and cover letter output files (LaTeX or Markdown formats) against a JD. Deep-tailoring track (Workflow B), paired with make-resume/make-cl/edit-resume.
+description: Critique existing resume/CV and cover letter output files (LaTeX or Markdown formats) against a JD. Deep-tailoring track (Workflow B), paired with make-resume/make-cover-letter/edit-resume.
 user-invocable: true
 ---
 
@@ -37,7 +37,7 @@ Read `config.md` — load Provenance Flags, FIXED Sections, email.
 Find and read the session file for the files being critiqued.
 
 **Recovery check:**
-- If the CL is not DONE in the session file: "CL not yet generated. Run `/make-cl` first."
+- If the CL is not DONE in the session file: "CL not yet generated. Run `/make-cover-letter` first."
 - If Critique is CURRENT: "Already critiqued (score X/100). Re-run? Waiting for confirmation."
 - If Critique is STALE: "Edits made since last critique. Re-critiquing."
 - If Critique is PENDING: proceed.

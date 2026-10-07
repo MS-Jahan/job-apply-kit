@@ -1,6 +1,6 @@
 ---
 name: resume-kit
-description: Shared reference, templates and helpers for the deep-tailoring resume skills (make-resume, make-cl, critique, edit-resume, setup-extract, setup-build-kb). Not used directly; installed automatically as their dependency.
+description: Shared reference, templates and helpers for the deep-tailoring resume skills (make-resume, make-cover-letter, critique, edit-resume, setup-extract, setup-build-kb). Not used directly; installed automatically as their dependency.
 ---
 
 # resume-kit

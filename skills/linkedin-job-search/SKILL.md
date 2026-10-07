@@ -9,7 +9,7 @@ user-invocable: true
 Universal rules: `{{CORE_DIR}}/OPERATIONS.md` (#sources #truth #browser). Config keys read: `linkedin_queries`, `cv_source`, `projects_source`, `onsite_locations`, `remote_ok`, `cdp_port`, `workspace`.
 
 ## Scope boundary (read first)
-This skill only **saves posts on LinkedIn**. It does not create or edit CVs, resumes or cover letters, write drafts or emails, fill or stage forms, or apply in any way. Saved posts are processed later by `/check-li-saved`.
+This skill only **saves posts on LinkedIn**. It does not create or edit CVs, resumes or cover letters, write drafts or emails, fill or stage forms, or apply in any way. Saved posts are processed later by `/check-linkedin-saved`.
 
 ## Inputs
 - `$ARGUMENTS`: optional custom search queries; if given, use them instead of `linkedin_queries`.
@@ -36,7 +36,7 @@ Run them in the order listed; each is a separate search pass. Without configured
 
 ### Step 2: open LinkedIn and run the first query
 - New tab at `https://www.linkedin.com/search/results/content/?keywords=<url-encoded query>`; confirm login (a redirect to login is a hard stop).
-- Set the filters: first filter **Posts**, second **Latest** (sort by date). Verify both chips before evaluating posts; navigation resets them, so re-apply after every navigation. (`li-full-run` sets the same two filters through URL parameters, which is more reliable.)
+- Set the filters: first filter **Posts**, second **Latest** (sort by date). Verify both chips before evaluating posts; navigation resets them, so re-apply after every navigation. (`linkedin-full-run` sets the same two filters through URL parameters, which is more reliable.)
 
 ### Step 3: evaluate and save (about 20 posts per query)
 - Scroll in steps (about 2000 px, wait 2 to 3 seconds, re-snapshot) until about 20 posts are evaluated or the feed ends.

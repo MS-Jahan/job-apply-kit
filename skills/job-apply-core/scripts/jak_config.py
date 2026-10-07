@@ -10,6 +10,7 @@ Usage:
   python3 jak_config.py --check          # validate, exit 1 on any required miss
   python3 jak_config.py --show           # resolved config, phone/emails masked
   python3 jak_config.py --get KEY        # print one resolved value
+  python3 jak_config.py --sync-keys      # add keys missing vs config.example.md (never overwrite)
   python3 jak_config.py --path           # print the config file path in use
 
 As a module:
@@ -227,6 +228,31 @@ def mask(key: str, value: str) -> str:
     return value
 
 
+def example_path() -> Path:
+    return Path(__file__).resolve().parent.parent.parent.parent / "config.example.md"
+
+
+def sync_keys(path, example: Path | None = None) -> list[str]:
+    """Add keys present in config.example.md but absent from the user's config.
+
+    Copies the example's value verbatim (placeholders stay placeholders, real
+    defaults like Sheet1 stay real). Never touches keys the user already has.
+    Returns the added key names.
+    """
+    path = Path(path)
+    ex_text = (example or example_path()).read_text(encoding="utf-8")
+    ex_raw: dict[str, str] = {}
+    for line in ex_text.splitlines():
+        m = KEYVAL.match(line)
+        if m and m.group(1) not in ex_raw:
+            ex_raw[m.group(1)] = m.group(2).strip()
+    cur = parse(path.read_text(encoding="utf-8"))
+    missing = {k: v for k, v in ex_raw.items() if k not in cur}
+    if not missing:
+        return []
+    return update_keys(path, missing)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", help="config file (default: $JAK_CONFIG or %s)" % DEFAULT_CONFIG_PATH)
@@ -234,6 +260,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--check", action="store_true")
     g.add_argument("--show", action="store_true")
     g.add_argument("--get", metavar="KEY")
+    g.add_argument("--sync-keys", action="store_true",
+                   help="add keys missing from the config (from config.example.md), never overwrite")
     g.add_argument("--path", action="store_true")
     a = ap.parse_args(argv)
     if a.path:
@@ -256,6 +284,10 @@ def main(argv: list[str] | None = None) -> int:
             v = cfg.get(k)
             if v:
                 print(f"{k}: {mask(k, v)}")
+        return 0
+    if a.sync_keys:
+        added = sync_keys(config_path(a.config))
+        print("added: " + ", ".join(added) if added else "config already has every key from config.example.md")
         return 0
     errors, warnings = cfg.check()
     for w in warnings:

@@ -16,7 +16,7 @@ from _paths import REPO
 
 SCRIPT_DIRS = [
     REPO / "skills" / "bdjobs-full-run" / "scripts",
-    REPO / "skills" / "li-full-run" / "scripts",
+    REPO / "skills" / "linkedin-full-run" / "scripts",
     REPO / "skills" / "check-discord-jobs" / "scripts",
 ]
 # CLI-only scripts that read sys.argv at module level by design (never meant to be imported as a library)
@@ -40,7 +40,7 @@ class ImportWithoutConfigTests(unittest.TestCase):
         # review_posts.py was a one-off, unreferenced, hardcoded-date script that ran a full pass as
         # an import side effect (no `if __name__` guard at all). Dropped entirely (2026-10-06); this
         # guards against it, or something like it, being re-added.
-        self.assertFalse((REPO / "skills" / "li-full-run" / "scripts" / "review_posts.py").exists())
+        self.assertFalse((REPO / "skills" / "linkedin-full-run" / "scripts" / "review_posts.py").exists())
 
 
 if __name__ == "__main__":

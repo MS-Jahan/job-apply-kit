@@ -43,7 +43,7 @@ get an INDEX block, done — no skill changes.
 
 ## The other track (deep-tailoring)
 
-`make-resume` / `make-cl` / `critique` / `edit-resume` ignore `templates_dir` entirely. They generate
+`make-resume` / `make-cover-letter` / `critique` / `edit-resume` ignore `templates_dir` entirely. They generate
 from scratch per job post through `resume.cls`/`cv.cls`, gated by `char_count.py`, from a knowledge
 base built by `setup-extract` / `setup-build-kb`. Use on explicit request, or when a post needs a
 combined skill set no single template covers.

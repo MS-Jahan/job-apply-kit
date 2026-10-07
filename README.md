@@ -8,7 +8,7 @@ Two tracks:
 
 - **Template-first (the default)**: pick the closest-fit template from your own `templates_dir` and
   attach it as-is, or build one with `/create-template` from your own CV. Fast, consistent, truthful.
-- **Deep-tailoring** (`make-resume` / `make-cl` / `critique` / `edit-resume`, backed by a knowledge
+- **Deep-tailoring** (`make-resume` / `make-cover-letter` / `critique` / `edit-resume`, backed by a knowledge
   base built with `setup-extract` / `setup-build-kb`): a gap-analysis, character-budget-gated system
   originally built for academic/research CVs, also usable for a from-scratch industry resume. Run it
   on explicit request, or when a job needs a combined skill set no single template covers.
@@ -120,20 +120,23 @@ every truth and format gate, compiles each to the right page count, and register
 
 ## Skill index
 
-| Skill | What it does |
-|---|---|
-| `job-apply-core` | shared rules (`OPERATIONS.md`), config setup, Google interface, tracker scripts |
-| `humanizer` | strips AI writing patterns from emails, cover letters and resume prose |
-| `create-template` | generate your own CV/resume/cover-letter templates per role category |
-| `make-resume`, `make-cl`, `critique`, `edit-resume` | deep-tailoring track for a specific job post |
-| `setup-extract`, `setup-build-kb` | build the optional knowledge base the deep-tailoring track reads |
-| `bdjobs-full-run` | BDJobs: search, save, decide, apply or draft — a 3-script scripted pipeline |
-| `li-full-run` | LinkedIn post-search: sweep, review, enrich, stage |
-| `linkedin-job-search` | save matching LinkedIn posts (save-only, no drafts or applications) |
-| `check-li-saved` | process LinkedIn's own saved-posts list end to end |
-| `check-fb-saved` | process Facebook saved items end to end |
-| `check-discord-jobs` | process Discord job-channel posts end to end |
-| `check-image-batch` | process a batch of pasted job-post screenshots end to end |
+Invoke by name (`/create-template`, `/check-discord-jobs`, ...). Each folder's `SKILL.md`
+is the full contract; this table is the router — which skill, and when.
+
+| Skill | Invoke when | What it does |
+|---|---|---|
+| `job-apply-core` | setup, config, Google/tracker help, or "set up my job-apply-kit config" | shared rules (`OPERATIONS.md`), config setup, Google interface, tracker scripts |
+| `humanizer` | email/resume prose sounds AI-written (also auto-runs inside apply flows) | strips AI writing patterns from emails, cover letters and resume prose |
+| `create-template` | first run, or a new role category needs templates | generate your own CV/resume/cover-letter templates per role category |
+| `make-resume`, `make-cover-letter`, `critique`, `edit-resume` | deep-tailoring track for a specific job post | resume + cover letter tailored, critiqued, edited for one post |
+| `setup-extract`, `setup-build-kb` | building the knowledge base the deep-tailoring track reads | extract sources, then synthesize experience files and bundles |
+| `bdjobs-full-run` | "run BDJobs for me" — search to portal-apply/draft | BDJobs: search, save, decide, apply or draft — a 3-script scripted pipeline |
+| `linkedin-full-run` | "run LinkedIn for me" — post-search to staged application | LinkedIn post-search: sweep, review, enrich, stage (uses `linkedin-job-search` queries) |
+| `linkedin-job-search` | "find/save LinkedIn posts" (save-only step) | save matching LinkedIn posts (save-only, no drafts or applications) |
+| `check-linkedin-saved` | process your LinkedIn saved-posts list | process LinkedIn's own saved-posts list end to end |
+| `check-facebook-saved` | process your Facebook saved items | process Facebook saved items end to end |
+| `check-discord-jobs` | process Discord job-channel posts | process Discord job-channel posts end to end |
+| `check-image-batch` | "here are screenshots of job posts" | process a batch of pasted job-post screenshots end to end |
 
 ## Other agents (Codex, Gemini, Cursor, Kilo, Cline, Roo, Windsurf, Amp, Aider)
 

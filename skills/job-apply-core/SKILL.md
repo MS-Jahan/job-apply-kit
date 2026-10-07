@@ -42,11 +42,18 @@ When the user asks to set up or update the config from their CV:
      or have them make a blank sheet, paste its URL into `sheet_url`, and adopt it
      as above.
    - Either way, end this step with the sheet reachable from config (`sheet_url`
-     and/or `sheet_id`, plus `sheet_columns` for adopted sheets) — verified by step 7.
+     and/or `sheet_id`, plus `sheet_columns` for adopted sheets) — verified by step 8.
 4. For `banned_claims` and `unproven_claims`: ask the user, one skill group at a time ("Have you really used X?"). Never decide for them.
 5. Do not fill other Google or sheet ids by hand. Tell the user to run `sheet_init` (it writes them), or ask them for existing ids.
-6. When updating from a newer CV: show a diff of changed keys and ask before overwriting any non-empty value.
-7. Validate:
+6. Ask for search and filter prefs (or confirm the example defaults): `bdjobs_terms`,
+   `linkedin_queries` (one per line), `onsite_locations`, `remote_ok`, `min_salary` /
+   `salary_floor_remote` / `salary_floor_onsite`, `max_experience_years`, plus
+   `discord_channels` when relevant. If the config is missing keys the example has
+   (older hand-made configs often lack newer ones like `discord_channels`),
+   run `python3 {{CORE_DIR}}/scripts/jak_config.py --sync-keys` first — it adds
+   absent keys without touching existing values, then ask the user to fill them.
+7. When updating from a newer CV: show a diff of changed keys and ask before overwriting any non-empty value.
+8. Validate:
    ```bash
    python3 {{CORE_DIR}}/scripts/jak_config.py --check
    python3 {{CORE_DIR}}/scripts/jak_config.py --show
@@ -65,7 +72,7 @@ any job, and follow its anchors when a skill references them.
 
 | Script | Use |
 |---|---|
-| `jak_config.py` | `--check`, `--show`, `--get KEY` |
+| `jak_config.py` | `--check`, `--show`, `--get KEY`, `--sync-keys` (add keys missing vs the example) |
 | `jak_google.py` | the one Google interface: `draft` (never sends), `drive-upload`, `drive-mkdir`, `drive-share-anyone`, `sheet-get`, `sheet-append`, `sheet-create`, `backend`, `accounts`. Backend `gog` or `python`, chosen from config |
 | `sheet_append.py` | append ONE tracker row (15 columns, RAW writes, header check; honors adopted sheet columns) |
 | `sheet_update.py` | `find` a row by company+position, `set` cells on it (Found→Drafted→Staged→Applied; hand-set statuses refuse) |

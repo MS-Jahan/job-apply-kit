@@ -5,7 +5,7 @@ from unittest import mock
 import _paths
 from _paths import REPO
 
-SK = REPO / "skills" / "li-full-run" / "scripts"
+SK = REPO / "skills" / "linkedin-full-run" / "scripts"
 CFG = """## Identity
 - **name:** Test User
 - **name_file:** Test_User

@@ -106,7 +106,7 @@ Note: Any FIXED positions (e.g., internships) are not included in this plan.
 - Cover Letter: [PENDING | IN_PROGRESS | DONE]
 - Critique: [PENDING | IN_PROGRESS | CURRENT (score) | STALE]
 - **Next:** [exact command to copy after /clear]
-- **Next CL:** /make-cl output/<FolderName>/session_<name>.md
+- **Next CL:** /make-cover-letter output/<FolderName>/session_<name>.md
 - **Next Critique:** /critique output/<FolderName>/session_<name>.md
 ```
 
