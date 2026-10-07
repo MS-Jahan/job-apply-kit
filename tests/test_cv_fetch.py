@@ -17,6 +17,14 @@ class CvFetchTests(unittest.TestCase):
         self.assertEqual(plan["kind"], "google-docs")
         self.assertEqual(plan["method"], "debug-browser")
         self.assertEqual(plan["doc_id"], "1AbC12xYz_qWERTY")
+        self.assertEqual(plan["mobile_url"], "https://docs.google.com/document/d/1AbC12xYz_qWERTY/mobilebasic")
+        self.assertEqual(plan["export_txt_url"], "https://docs.google.com/document/d/1AbC12xYz_qWERTY/export?format=txt")
+
+    def test_mobilebasic_input_classifies_same_doc(self):
+        plan = cv_fetch.classify("https://docs.google.com/document/d/1AbC12xYz_qWERTY/mobilebasic")
+        self.assertEqual(plan["kind"], "google-docs")
+        self.assertEqual(plan["doc_id"], "1AbC12xYz_qWERTY")
+        self.assertEqual(plan["mobile_url"], "https://docs.google.com/document/d/1AbC12xYz_qWERTY/mobilebasic")
 
     def test_google_drive_file_needs_debug_browser(self):
         for url in ("https://drive.google.com/file/d/1AbC12xYz_qWERTY/view",

@@ -23,7 +23,9 @@ When the user asks to set up or update the config from their CV:
    and follow its `method`: `local-file` → read directly; `google-docs` /
    `google-drive-file` → open the link in the debug browser
    (`agent-browser open` + `snapshot`, scroll to the last line — the user is
-   already logged in there); `web` → fetch, then confirm the FULL text
+   already logged in there). For Google Docs, open the plan's `mobile_url`
+   (`.../mobilebasic`), never `/edit` — the canvas snapshots near-empty
+   (`agent-browser.md` §3b); `web` → fetch, then confirm the FULL text
    arrived (contact block to last line), re-reading via the debug browser
    when truncated or JS-gated. Never build a config from a partial read —
    when in doubt, re-read through the browser and say so.

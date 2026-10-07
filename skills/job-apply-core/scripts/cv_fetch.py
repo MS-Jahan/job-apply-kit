@@ -42,9 +42,16 @@ def classify(source: str) -> dict:
                 "detail": "published Google Doc (public HTML) — plain fetch works; verify the full text arrived."}
     m = DOCS_RE.search(s)
     if m:
-        return {"kind": "google-docs", "method": "debug-browser", "doc_id": m.group(1),
-                "detail": "Google Doc — read ONLY through the debug browser (agent-browser open + snapshot to the end). "
-                          "Plain web fetch returns a truncated page. Requires the debug browser first (BOOTSTRAP §3). "
+        doc_id = m.group(1)
+        mobile = f"https://docs.google.com/document/d/{doc_id}/mobilebasic"
+        export = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+        return {"kind": "google-docs", "method": "debug-browser", "doc_id": doc_id,
+                "mobile_url": mobile, "export_txt_url": export,
+                "detail": f"Google Doc — read the LIGHTWEIGHT view, never /edit: open {mobile} "
+                          "in the debug browser (agent-browser open + snapshot to the last line; the user is "
+                          "already logged in there). /edit is a JS canvas that snapshots poorly; /mobilebasic is "
+                          "plain HTML holding the full text (verified: same words as the txt export). Plain fetch "
+                          f"of {export} also works for public docs. Requires the debug browser first (BOOTSTRAP §3). "
                           "Alternative once the Google backend exists: export via gog."}
     m = DRIVE_RE.search(s)
     if m:

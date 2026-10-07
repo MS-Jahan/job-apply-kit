@@ -91,6 +91,25 @@ agent-browser tab list   # should show the user's real tabs
 If `tab list` shows only `about:blank`, you launched a fresh browser —
 re-run `connect <cdp_port>`.
 
+## 3b. Google Docs: always read the lightweight view
+
+A `/edit` URL loads a JS canvas editor — snapshots come back near-empty and
+plain fetches return a truncated shell (verified live: 181 KB of JS, words
+missing). Rewrite EVERY Google Doc link before reading:
+
+```
+https://docs.google.com/document/d/<DOC_ID>/edit...
+→ https://docs.google.com/document/d/<DOC_ID>/mobilebasic
+```
+
+`agent-browser tab new` → `open <mobilebasic-url>` → `snapshot` to the last
+line. The mobile view is plain HTML holding the full text (verified: strips
+to the same words as the txt export). Plain-fetch fallback for public docs:
+`https://docs.google.com/document/d/<DOC_ID>/export?format=txt` returns the
+whole document as text (private docs need the logged-in browser instead).
+This applies everywhere — CV setup, web search results, any doc reading —
+not just one skill. `cv_fetch.py` prints both URLs for any doc link.
+
 ## 4. Tab hygiene — don't hijack the user's tabs
 
 - `open <url>` navigates the **currently selected tab**. Always open a fresh tab

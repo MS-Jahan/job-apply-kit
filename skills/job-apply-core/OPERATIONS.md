@@ -45,6 +45,10 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 
 - The only source of facts about the candidate is `cv_source` (URLs or local files), plus `projects_source` if set. At the start of every session that touches candidate content (tailoring, cover letters, critiques, applications) read all of them.
 - If a source is unreachable, stop and tell the user. Do not fall back to memory, old resumes or old outputs.
+- Google Docs links are always read via their lightweight view: rewrite
+  `.../document/d/<id>/...` to `.../document/d/<id>/mobilebasic` before
+  opening (the `/edit` canvas snapshots near-empty). Public docs also fetch as
+  plain text via `.../export?format=txt`. Details: `agent-browser.md` §3b.
 - Snapshot what you read to `.cache/profile/<date>/` so sub-agents share one fact base for that day.
 - Local libraries (`resumes/`, `resume_builder` experience files and bundles, old `output/` folders) are caches. If they disagree with the live source, the live source wins.
 - Education, dates, grades, titles and certification lists are always read from the source, never hard-coded in rules, skills or templates' prose rules.
