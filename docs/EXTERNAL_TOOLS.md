@@ -15,10 +15,10 @@ tailor|apply|all` tells you exactly what is missing) and verify with the command
 | `poppler-utils` (`pdfinfo`) | page-budget checks everywhere | tailor, apply | see §3.7 | — | `pdfinfo -v` |
 | `gog` (gogcli) | primary Google backend: Gmail drafts, Drive, Sheets | apply (or use the python backend instead) | see §3.8 | `gog auth add <email>` | `gog --version`; `gog auth list` |
 | Google account(s) | Gmail drafts, Drive uploads, Sheets tracker | apply | — | see §6 (account roles) | `./doctor.sh --mode apply` |
-| Node 18+ | `agent-browser` | apply | see §3.6 | — | `node -v` |
+| Node (latest LTS via a version manager) | `agent-browser`, MCP servers | apply | see §3.6 (never a frozen installer) | — | `node -v` vs latest LTS |
 | `agent-browser` (npm) | default browser driver for every apply/search skill | apply | `npm install -g agent-browser@latest`; put `~/.npm-global/bin` on `PATH` | attaches to your already-running debug browser | `agent-browser --version` |
 | Debug browser (Chrome/Edge/Brave/Chromium) | agent-browser, chrome-devtools MCP, raw CDP | apply | see §3.9 + §4 (`browser_setup.py --create`) | start with remote debugging (see §4) | `curl -s http://127.0.0.1:<cdp_port>/json/version` |
-| `chrome-devtools` MCP | fallback browser driver (console/network/performance/Lighthouse, uid-targeted work) | optional | `npx -y chrome-devtools-mcp@latest`; `install.sh` registers it automatically (see §5) | points at the same debug port | MCP tool list shows `mcp__chrome-devtools__*` |
+| `chrome-devtools` MCP | fallback browser driver (console/network/performance/Lighthouse, uid-targeted work) | optional | `npx -y chrome-devtools-mcp@latest`; `install.sh` registers it automatically (see §5) | points at the same debug port | §5.1 three-layer check (entry + launch + handshake), not just registration |
 | SearXNG MCP | JD/company search, first choice | optional | self-host or hosted instance + MCP config | instance URL | a search tool call returns results |
 | Claude Code or OpenCode | runs the skills | all | see §3.10 | — | `claude --version` / `opencode --version` |
 
@@ -159,14 +159,24 @@ https://github.com/vercel-labs/agent-browser.
 - Then: `python3 -m pip install -r requirements.txt`.
 - Web-search fallback: `site:python.org downloads windows`, `python macos homebrew install`.
 
-### 3.6 Node 18+
+### 3.6 Node (always latest LTS, via a version manager)
 
-- Windows: `winget install OpenJS.NodeJS.LTS`, or the LTS installer from
-  https://nodejs.org/en/download (sets PATH itself).
-- macOS: `brew install node@22`.
-- Linux: distro package or nvm — https://github.com/nvm-sh/nvm, then
-  `nvm install --lts`.
-- Web-search fallback: `nodejs download LTS windows`, `nodejs linux install nvm`.
+Standing rule (see `docs/BOOTSTRAP.md` §2.2): a version manager plus latest LTS, never a
+frozen installer or distro package. A stale minor breaks dependents without warning
+(observed 2026-10-07: Node 20.15.0 vs `chrome-devtools-mcp` requiring Node 20.19+).
+
+- Windows: nvm for Windows v2 (https://github.com/nvm-windows/nvm):
+  setup exe, then `nvm install lts && nvm use <version>`. If the installer refuses
+  over a manually placed Node (no uninstaller), exit it, delete that folder (admin),
+  remove its PATH entries (HKLM needs admin; HKCU does not), re-run setup. Keep exactly
+  one Node on PATH — a stale entry shadows the managed one for every child process,
+  including MCP servers spawned by agent hosts.
+- macOS: nvm (https://github.com/nvm-sh/nvm), `nvm install --lts` (`brew install node@22`
+  only as fallback).
+- Linux: nvm (https://github.com/nvm-sh/nvm), `nvm install --lts` (avoid distro packages).
+- Verify: `node -v` against https://nodejs.org/download/release/index.json (latest `lts`
+  codename; was v24.21.0 Krypton on 2026-10-07).
+- Web-search fallback: `nvm windows install latest LTS`, `nodejs linux install nvm`.
 
 ### 3.7 poppler-utils (pdfinfo) and pandoc
 
@@ -330,6 +340,31 @@ Both `--browserUrl` and the upstream-documented `--browser-url` spelling are acc
 dialog, which does not fit a headless/automated flow). Run `./install.sh --setup-mcp-only` any time to
 (re-)register without touching skill files.
 
+### 5.1 Verify the MCP actually works (registration alone proves nothing)
+
+`doctor.py` only checks the config entry exists. When the MCP misbehaves — or once, after setup —
+prove all three layers, in order (observed 2026-10-07: entries were correct in both clients
+while the server itself refused to start on Node 20.15.0):
+
+1. **Entries.** Claude Code `~/.claude.json` top-level `mcpServers.chrome-devtools`
+   (`command: npx`, `args: [-y, chrome-devtools-mcp@latest, --browserUrl,
+   http://127.0.0.1:<cdp_port>]`); OpenCode global config `mcp.chrome-devtools`
+   (v1) / `mcp.servers.chrome-devtools` (v2) in the `command: [...]` array form.
+   Port must equal config `cdp_port`.
+2. **Binary launches.** `npx -y chrome-devtools-mcp@latest --help` must exit 0. A Node
+   floor error here (`does not support Node vX, upgrade to ...`) means the whole MCP is
+   dead in every client — fix Node first (§3.6), this is never an MCP-config problem.
+3. **End-to-end handshake.** With the debug browser running, start the server over stdio
+   with the registered `--browserUrl`, send JSON-RPC `initialize` +
+   `notifications/initialized` + `tools/list`, and expect a `serverInfo` result plus a
+   tool list (~30 tools, e.g. `click`, `fill`, `evaluate_script`). Timeout 60-90s; the
+   first run downloads the package.
+4. **No stale Node shadows the managed one.** `where node` (fresh shell) must resolve to
+   the managed install first. A manually placed Node (no uninstaller) beats nvm entries
+   when its dir sits earlier on PATH (system entries precede user entries on Windows):
+   delete the folder (admin) and its PATH entries (HKLM needs admin, HKCU does not),
+   then re-check. `tools.json` records the resolved paths for `doctor.py`.
+
 ## 6. Account discipline
 
 Two roles, never conflated (OPERATIONS.md#accounts):
@@ -364,6 +399,8 @@ exception — not a general license to submit things.
 | `gog auth list` fails with a keyring/decrypt error | keyring locked or password unavailable in this shell | `gog auth keyring`, or use `GOG_ACCESS_TOKEN` for this session |
 | `doctor.sh` says no usable Google backend | neither `gog` unlocks nor a python-backend token exists | run `gog auth add` or `google_setup.py --auth-url` |
 | `agent-browser tab list` shows only `about:blank` | attached to a fresh browser instead of your debug one | re-run `agent-browser connect <cdp_port>`; confirm the debug browser is actually listening on that port |
+| MCP calls fail at spawn / `does not support Node vX` in logs | stale Node below the MCP's floor (needs 20.19+; was 20.15.0 on 2026-10-07) | upgrade Node via version manager to latest LTS (§3.6); entries are not the problem — verify with §5.1 |
+| MCP registered but tools never appear, or wrong browser answers | stale second Node earlier on PATH shadowing the managed one (system PATH precedes user PATH on Windows) | delete the stale folder + its PATH entries (HKLM needs admin), `where node` must hit the managed install first (§5.1 step 4) |
 | chrome-devtools MCP calls fail with "received undefined" | known MCP parameter bug on some builds | fall back to `skills/job-apply-core/scripts/cdp.py` (raw CDP, last resort) |
 | Sheet row lands in the wrong columns | a hand-rolled append instead of `sheet_append.py` | always use `python3 skills/job-apply-core/scripts/sheet_append.py append '<json-row>'` |
 | A phone number or formula-looking cell shows `#ERROR!` in the tracker sheet | a write that used `USER_ENTERED` instead of `RAW` | shouldn't happen through this kit's scripts (they always write RAW); if you wrote the cell by hand, re-enter it as text |

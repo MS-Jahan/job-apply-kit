@@ -85,7 +85,7 @@ python3 -c "import platform; print(platform.system(), platform.machine())"
 |---|---|---|---|
 | Python 3.9+ | every script | https://www.python.org/downloads/ | `python3 -V` (Windows: `py -3 -V`) |
 | Python packages | Google backend, CDP scripts | `requirements.txt` (PyPI) | `python3 -c "import googleapiclient, google.oauth2, websocket"` |
-| Node 18+ | runs `agent-browser` | https://nodejs.org/en/download | `node -v` |
+| Node (latest LTS via a version manager) | runs `agent-browser` + MCP servers | https://github.com/nvm-windows/nvm (Windows) | `node -v` vs latest LTS |
 | `agent-browser` | drives the debug browser | npm: `vercel-labs/agent-browser` | `agent-browser --version` |
 | `tectonic` | compiles CV/resume/CL PDFs | https://tectonic-typesetting.github.io | `tectonic --version` |
 | `poppler-utils` (`pdfinfo`) | page-budget checks | OS package (below) | `pdfinfo -v` |
@@ -103,20 +103,35 @@ python3 -c "import platform; print(platform.system(), platform.machine())"
   `sudo dnf install python3 python3-pip` (Fedora).
 - Then: `python3 -m pip install -r requirements.txt` (Windows: `py -3 -m pip install -r requirements.txt`).
 
-### 2.2 Node 18+ and agent-browser
+### 2.2 Node (always latest LTS, via a version manager) and agent-browser
 
-- Windows: `winget install OpenJS.NodeJS.LTS` (nodejs.org LTS installer works
-  too and sets PATH itself). Fallback query: `nodejs download LTS windows`.
-- macOS: `brew install node@22`. Fallback query: `nodejs macos install`.
-- Linux: distro package or nvm (https://github.com/nvm-sh/nvm):
-  `nvm install --lts`. Fallback query: `nodejs linux install nvm`.
+Standing rule: install Node through a version manager and always use the latest LTS —
+never a frozen distro package or a one-off manual install, which rots (e.g. Node 20.15
+broke `chrome-devtools-mcp`, which needs Node 20.19+). Verify with `node -v` against
+https://nodejs.org/download/release/index.json (first entry with an `lts` codename).
+
+- Windows: nvm for Windows v2 (https://github.com/nvm-windows/nvm, Microsoft/Google
+  recommended; needs no admin for user scope): run the setup exe, then
+  `nvm install lts && nvm use <version>`. The installer refuses while a manually
+  placed Node exists (e.g. `D:\Program Files\nodejs` with no uninstaller): exit the
+  installer, delete that folder (admin), remove its PATH entries (HKLM needs admin,
+  HKCU does not), re-run setup. Never leave two Nodes on PATH — the stale one shadows
+  the managed one, including for MCP servers spawned by agent hosts. Fallback query:
+  `nvm windows install latest LTS`.
+- macOS: `brew install node@22` only as fallback; preferred is nvm
+  (https://github.com/nvm-sh/nvm): `nvm install --lts`. Fallback query:
+  `nodejs macos install`.
+- Linux: nvm (https://github.com/nvm-sh/nvm): `nvm install --lts` (distro packages
+  freeze old minors — avoid). Fallback query: `nodejs linux install nvm`.
 - Then, always **globally** (`-g`; the per-project local install is
   known-broken on Windows): `npm install -g agent-browser@latest` and put the
   global bin dir on PATH (`~/.npm-global/bin` on Linux/macOS; automatic on
-  Windows). Optionally `agent-browser install` for a bundled Chrome
-  (Chrome-for-Testing channel) — the kit attaches to your own debug browser
-  anyway. If Windows Defender quarantines the binary, restore/allow it and
-  re-run. Details: `docs/EXTERNAL_TOOLS.md` section 3.4.
+  Windows). If npm blocks the postinstall (allowScripts policy), re-run with
+  `npm install -g --allow-scripts=agent-browser` (or
+  `npm config set allow-scripts=agent-browser --location=user` first). Optionally
+  `agent-browser install` for a bundled Chrome (Chrome-for-Testing channel) — the kit
+  attaches to your own debug browser anyway. If Windows Defender quarantines the
+  binary, restore/allow it and re-run. Details: `docs/EXTERNAL_TOOLS.md` section 3.4.
   Upstream repo for flag changes: https://github.com/vercel-labs/agent-browser.
 
 ### 2.3 tectonic, poppler-utils, pandoc (all available on Windows)
