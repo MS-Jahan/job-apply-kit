@@ -25,6 +25,8 @@ CLI (JSON on stdout, errors on stderr, exit 1):
   jak_google.py sheet-get SHEET_ID RANGE
   jak_google.py sheet-append SHEET_ID RANGE --values-json '[[...]]'          (sheet_append.py guards the 15 columns)
   jak_google.py sheet-update SHEET_ID RANGE --values-json '[[...]]'          (sheet_update.py guards keys + statuses)
+  jak_google.py gmail-list [--limit 3]                                       (read-only verification)
+  jak_google.py drive-list [--limit 3] [--query Q]                           (read-only verification)
 """
 from __future__ import annotations
 
@@ -149,6 +151,27 @@ class GogBackend:
                        "--input", "RAW"])
         return {"range": r.get("updatedRange", rng)}
 
+    def gmail_list(self, limit=3):
+        r = self._run(["gmail", "list", "--limit", str(limit)])
+        items = []
+        if isinstance(r, dict):
+            for m in r.get("messages", []) or r.get("threads", []) or r.get("items", []):
+                if isinstance(m, dict):
+                    items.append({"id": m.get("id", ""),
+                                  "subject": m.get("subject", "") or m.get("snippet", "")})
+                else:
+                    items.append({"id": str(m), "subject": ""})
+        return items[:limit]
+
+    def drive_list(self, limit=3, query=""):
+        args = ["drive", "ls", "--max", str(limit)]
+        if query:
+            args += ["--query", query]
+        r = self._run(args)
+        files = r.get("files", []) if isinstance(r, dict) else (r if isinstance(r, list) else [])
+        return [{"id": f.get("id", ""), "name": f.get("name", ""),
+                 "mimeType": f.get("mimeType", "")} for f in files[:limit] if isinstance(f, dict)]
+
     # test/cleanup helpers (the kit itself never deletes)
     def _delete_file(self, file_id):
         self._run(["drive", "delete", file_id, "--permanent", "--force"])
@@ -230,6 +253,27 @@ class PythonBackend:
             spreadsheetId=sheet_id, range=rng, valueInputOption="RAW",
             body={"values": rows}).execute()
         return {"range": r.get("updatedRange", rng)}
+
+    def gmail_list(self, limit=3):
+        svc = self._svc("gmail", "v1").users().messages()
+        ids = [m["id"] for m in svc.list(userId="me", maxResults=limit).execute().get("messages", [])]
+        out = []
+        for mid in ids[:limit]:
+            meta = svc.get(userId="me", id=mid, format="METADATA",
+                           metadataHeaders=["Subject", "From"]).execute()
+            heads = {h["name"].lower(): h.get("value", "")
+                     for h in meta.get("payload", {}).get("headers", [])}
+            out.append({"id": mid, "subject": heads.get("subject", ""),
+                        "from": heads.get("from", "")})
+        return out
+
+    def drive_list(self, limit=3, query=""):
+        q = query or "'me' in owners and trashed=false"
+        r = self._svc("drive", "v3").files().list(
+            q=q, orderBy="createdTime desc", pageSize=limit,
+            fields="files(id,name,mimeType,createdTime)").execute()
+        return [{"id": f.get("id", ""), "name": f.get("name", ""),
+                 "mimeType": f.get("mimeType", "")} for f in r.get("files", [])[:limit]]
 
     def _delete_file(self, file_id):
         self._svc("drive", "v3").files().delete(fileId=file_id).execute()
@@ -321,6 +365,16 @@ def sheet_update(sheet_id, rng, rows, **kw):
     return backend(**kw).sheet_update(sheet_id, rng, rows)
 
 
+def gmail_list(limit=3, **kw):
+    """Newest Gmail message ids + subjects (read-only, for post-auth verification)."""
+    return backend(**kw).gmail_list(limit)
+
+
+def drive_list(limit=3, query="", **kw):
+    """Newest Drive files (id, name, mimeType). Empty query = own files, newest first."""
+    return backend(**kw).drive_list(limit, query)
+
+
 # --------------------------------------------------------------------------- CLI
 
 def main(argv=None) -> int:
@@ -362,6 +416,11 @@ def main(argv=None) -> int:
     p.add_argument("sheet_id")
     p.add_argument("range")
     p.add_argument("--values-json", required=True)
+    p = sub.add_parser("gmail-list")
+    p.add_argument("--limit", type=int, default=3)
+    p = sub.add_parser("drive-list")
+    p.add_argument("--limit", type=int, default=3)
+    p.add_argument("--query", default="")
     a = ap.parse_args(argv)
     kw = {k: v for k, v in (("name", a.backend if a.backend and a.backend != "auto" else None), ("account", a.account)) if v}
     try:
@@ -385,6 +444,10 @@ def main(argv=None) -> int:
             out = sheet_get(a.sheet_id, a.range, **kw)
         elif a.cmd == "sheet-update":
             out = sheet_update(a.sheet_id, a.range, json.loads(a.values_json), **kw)
+        elif a.cmd == "gmail-list":
+            out = {"messages": gmail_list(a.limit, **kw)}
+        elif a.cmd == "drive-list":
+            out = {"files": drive_list(a.limit, a.query, **kw)}
         else:
             out = sheet_append(a.sheet_id, a.range, json.loads(a.values_json), **kw)
     except (GoogleError, json.JSONDecodeError) as e:

@@ -4,11 +4,22 @@ sheet (with the 15 headers A..O), then write the ids into config.md. Existing id
 
 Usage: python3 sheet_init.py [--dry-run]
        python3 sheet_init.py --adopt SHEET_ID_OR_URL [--tab NAME] [--dry-run]
---adopt keeps the user's OWN sheet: its header row is matched to the 15 tracked columns
-(any order; extra columns are ignored and never written) and the match is saved to config
-sheet_columns. Appends/updates then place values at the matched positions and abort when
-the live header drifts. Needs a usable Google backend (see doctor.sh). Nothing is shared
-publicly here; resume files are shared one by one at upload time, and only inside this folder.
+       python3 sheet_init.py --adopt-folder FOLDER_ID_OR_URL [--dry-run]
+
+Agent procedure (ask-first — this script never prompts):
+  1. Explain the two things: the SHEET ("Application Tracker") is where every
+     application is tracked (one row per job, status moves Found → Applied);
+     the DRIVE FOLDER ("Application Tracker") is where every generated resume,
+     CV and cover letter is uploaded. Then ask: "Do you already have a tracker
+     sheet or a Drive folder? Paste the URLs — or shall I create both?"
+  2. URLs pasted → --adopt (sheet: matches + saves its columns) and/or
+     --adopt-folder. Nothing matched → report it, ask the user, never guess.
+  3. Nothing exists → run bare sheet_init.py: it creates the "Application Tracker"
+     folder + templates subfolder + "Application Tracker" sheet in Drive root and
+     writes all ids to config.
+
+Needs a usable Google backend (see doctor.sh). Nothing is shared publicly here;
+resume files are shared one by one at upload time, and only inside this folder.
 """
 from __future__ import annotations
 
@@ -27,6 +38,21 @@ from sheet_append import HEADERS, column_map_from_header  # noqa: E402
 def sheet_id_from(s: str) -> str:
     m = re.search(r"/spreadsheets/d/([A-Za-z0-9_-]+)", s)
     return m.group(1) if m else s.strip()
+
+
+def folder_id_from(s: str) -> str:
+    m = re.search(r"/drive/(?:folders|file/d)/([A-Za-z0-9_-]+)", s)
+    return m.group(1) if m else s.strip()
+
+
+def adopt_folder(folder_ref: str, dry_run: bool) -> int:
+    folder_id = folder_id_from(folder_ref)
+    print(f"adopted Drive folder {folder_id} (uploads go here; resumes are shared one by one)")
+    if dry_run:
+        return 0
+    jak_config.update_keys(jak_config.config_path(), {"drive_folder_id": folder_id})
+    print("wrote drive_folder_id to config")
+    return 0
 
 
 def adopt(sheet_ref: str, tab: str | None, dry_run: bool) -> int:
@@ -63,22 +89,25 @@ def main(argv=None) -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--adopt", metavar="SHEET_ID_OR_URL",
                     help="adopt the user's own sheet instead of creating one (matches + saves its columns)")
+    ap.add_argument("--adopt-folder", metavar="FOLDER_ID_OR_URL",
+                    help="adopt the user's own Drive folder instead of creating one")
     ap.add_argument("--tab", default=None, help="tab name for --adopt (default: config sheet_tab, else Sheet1)")
     a = ap.parse_args(argv)
     if a.adopt:
         return adopt(a.adopt, a.tab, a.dry_run)
+    if a.adopt_folder:
+        return adopt_folder(a.adopt_folder, a.dry_run)
     cfg = jak_config.load()
-    who = cfg.get("name") or "Candidate"
     updates: dict[str, str] = {}
     plan = []
     folder_id = cfg.get("drive_folder_id")
     if not folder_id:
-        plan.append(f"create Drive folder 'Job Application Resumes - {who}'")
+        plan.append("create Drive folder 'Application Tracker' (all resumes, CVs, cover letters upload here)")
     if not cfg.get("drive_templates_folder_id"):
         plan.append("create Drive subfolder 'templates'")
     sheet_id = cfg.get("sheet_id")
     if not sheet_id:
-        plan.append(f"create sheet 'Application Tracker - {who}' with 15 headers")
+        plan.append("create sheet 'Application Tracker' with 15 headers (one row per application)")
     if not plan:
         print("nothing to do: drive_folder_id, drive_templates_folder_id and sheet_id are already set")
         return 0
@@ -88,12 +117,12 @@ def main(argv=None) -> int:
         return 0
     try:
         if not folder_id:
-            folder_id = google.drive_mkdir(f"Job Application Resumes - {who}")["id"]
+            folder_id = google.drive_mkdir("Application Tracker")["id"]
             updates["drive_folder_id"] = folder_id
         if not cfg.get("drive_templates_folder_id"):
             updates["drive_templates_folder_id"] = google.drive_mkdir("templates", folder_id)["id"]
         if not sheet_id:
-            sh = google.sheet_create(f"Application Tracker - {who}")
+            sh = google.sheet_create("Application Tracker")
             google.sheet_append(sh["id"], f"{cfg.get('sheet_tab') or 'Sheet1'}!A:O", [HEADERS])
             updates["sheet_id"] = sh["id"]
             print("tracker: " + sh.get("url", sh["id"]))

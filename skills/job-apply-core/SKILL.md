@@ -30,30 +30,32 @@ When the user asks to set up or update the config from their CV:
    when truncated or JS-gated. Never build a config from a partial read —
    when in doubt, re-read through the browser and say so.
 2. Copy `config.example.md` to the config path if no config exists. Fill `name`, `name_file`, contact fields, links and `cv_source` from the CV. Do not invent values; leave unknowns empty and ask.
-3. Ask for the job-application tracker Google Sheet URL in the same conversation
-   (one ask, right after the CV — never finish a config setup without it):
-   - User pastes a sheet URL → save it in config `sheet_url`, then adopt it:
-     `python3 {{CORE_DIR}}/scripts/sheet_init.py --adopt <url>` (matches and saves
-     its columns into `sheet_id`/`sheet_columns`; reports missing/ambiguous headers
-     instead of guessing).
-   - User has no sheet → tell them to create one: run
-     `python3 {{CORE_DIR}}/scripts/sheet_init.py` (creates the Drive folder, the
-     tracker sheet with the 15 standard headers, and writes all ids to config),
-     or have them make a blank sheet, paste its URL into `sheet_url`, and adopt it
-     as above.
-   - Either way, end this step with the sheet reachable from config (`sheet_url`
-     and/or `sheet_id`, plus `sheet_columns` for adopted sheets) — verified by step 8.
+3. Tracker sheet + Drive folder — one ask, right after the CV (never finish a config
+   setup without both; never silently create). Explain both in plain words first: the
+   SHEET ("Application Tracker") is where every application is tracked (one row per job,
+   status Found → Applied); the DRIVE FOLDER ("Application Tracker") is where every
+   generated resume, CV and cover letter is uploaded. Then ask: "Do you already have a
+   tracker sheet or a Drive folder? Paste the URLs — or shall I create both for you?"
+   - URLs pasted → save the sheet URL into config `sheet_url`, then
+     `python3 {{CORE_DIR}}/scripts/sheet_init.py --adopt <sheet-url>` (matches and saves
+     its columns into `sheet_id`/`sheet_columns`) and
+     `python3 {{CORE_DIR}}/scripts/sheet_init.py --adopt-folder <folder-url>`.
+     Headers that don't match are reported, never guessed.
+   - Nothing exists → `python3 {{CORE_DIR}}/scripts/sheet_init.py` creates the
+     "Application Tracker" folder + templates subfolder + "Application Tracker" sheet
+     in Drive root and writes all ids to config. (A user-made blank sheet works too:
+     paste its URL into `sheet_url` and adopt it as above.)
+   - Either way, end this step with sheet + folder reachable from config — verified by step 7.
 4. For `banned_claims` and `unproven_claims`: ask the user, one skill group at a time ("Have you really used X?"). Never decide for them.
-5. Do not fill other Google or sheet ids by hand. Tell the user to run `sheet_init` (it writes them), or ask them for existing ids.
-6. Ask for search and filter prefs (or confirm the example defaults): `bdjobs_terms`,
+5. Ask for search and filter prefs (or confirm the example defaults): `bdjobs_terms`,
    `linkedin_queries` (one per line), `onsite_locations`, `remote_ok`, `min_salary` /
    `salary_floor_remote` / `salary_floor_onsite`, `max_experience_years`, plus
    `discord_channels` when relevant. If the config is missing keys the example has
    (older hand-made configs often lack newer ones like `discord_channels`),
    run `python3 {{CORE_DIR}}/scripts/jak_config.py --sync-keys` first — it adds
    absent keys without touching existing values, then ask the user to fill them.
-7. When updating from a newer CV: show a diff of changed keys and ask before overwriting any non-empty value.
-8. Validate:
+6. When updating from a newer CV: show a diff of changed keys and ask before overwriting any non-empty value.
+7. Validate:
    ```bash
    python3 {{CORE_DIR}}/scripts/jak_config.py --check
    python3 {{CORE_DIR}}/scripts/jak_config.py --show
@@ -77,7 +79,8 @@ any job, and follow its anchors when a skill references them.
 | `sheet_append.py` | append ONE tracker row (15 columns, RAW writes, header check; honors adopted sheet columns) |
 | `sheet_update.py` | `find` a row by company+position, `set` cells on it (Found→Drafted→Staged→Applied; hand-set statuses refuse) |
 | `sheet_snapshot.py` | read-only tracker snapshot into `JDs/tracker/` |
-| `sheet_init.py` | one-time: create Drive folder, templates subfolder and tracker sheet; writes ids to config (`--adopt` keeps your own sheet) |
+| `sheet_init.py` | one-time: create Drive folder, templates subfolder and tracker sheet; writes ids to config (`--adopt` keeps your own sheet, `--adopt-folder` your own folder — ask first, never silently create) |
+| `google_verify.py` | post-auth proof (read-only): newest Gmail, Drive files, spreadsheets — show the user |
 | `gmail_draft.py` | draft with attachments (wrapper over `jak_google.py draft`) |
 | `google_setup.py` | python-backend OAuth: `--account`, `--client-secret`, `--auth-url`, `--auth-code`, `--import-token`, `--check` |
 | `browser_setup.py` | detect Chromium browsers (`--list`), generate default-profile debug launchers + desktop shortcuts (`--browser chrome,brave --create`; `--profile`/`--isolated` only for opt-in separate profiles), pre-launch running check + guarded start (`--check-running`, `--launch`) |

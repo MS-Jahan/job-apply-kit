@@ -44,6 +44,19 @@ python3 skills/job-apply-core/scripts/google_setup.py --check --account you@exam
 Already have a token from another tool with the same scopes? Import it instead of re-authorizing:
 `google_setup.py --import-token /path/to/token.json --account you@example.com`.
 
+## Prove it works (right after auth)
+
+Run the read-only verification and SHOW the output to the user as the
+"connection is live" evidence — newest Gmail messages, newest Drive files,
+newest spreadsheets:
+
+```bash
+python3 skills/job-apply-core/scripts/google_verify.py
+```
+
+Exit 0 = all three answered. A FAILED section names its error (wrong account,
+missing scope, network) so you know what to fix before touching real data.
+
 Scopes requested: `gmail.readonly`, `gmail.compose` (drafts only — `gmail.send` is never requested),
 `drive`, `spreadsheets`. Config key `google_backend: gog` forces A, `python` forces B, `auto`
 prefers A and falls back to B.
