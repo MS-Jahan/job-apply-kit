@@ -28,6 +28,12 @@ when you only target one.
 
 Notes and traps (read before copying entries between clients):
 
+- **Bare `npx` in an MCP entry depends on the host's PATH.** A client started before a
+  Node install/PATH change spawns the server dead (`'npx' is not recognized`, exit 1).
+  Prefer the absolute npx path in the entry — with nvm for Windows the shim dir
+  (`...\nvm\.nodejs\npx.exe`) is stable across version switches. Diagnosis flow:
+  `docs/EXTERNAL_TOOLS.md` §5.1.
+
 - **Windsurf remote URLs use `serverUrl`, not `url`.** A block copied from
   Cursor/Claude with `"url"` parses fine and then silently does nothing.
 - **Cline CLI does NOT read `~/.cline/mcp.json`.** Older Cline docs say it

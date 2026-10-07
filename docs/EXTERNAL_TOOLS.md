@@ -141,6 +141,12 @@ Windows notes: supported (native x64 binary + Node.js fallback). If Windows
 Defender quarantines the binary (a known ML-heuristic false positive on some
 releases), restore/allow it and re-run; fallback search:
 `agent-browser windows defender false positive github vercel-labs`.
+Newer npm (11.x) may block the postinstall script by default (`install scripts
+not yet covered by allowScripts` warning; observed 2026-10-07) — the package
+installs but its native binary never downloads. Fix once with
+`npm config set allow-scripts=agent-browser --location=user` then reinstall, or
+`npm install -g --allow-scripts=agent-browser agent-browser@latest`. Verify with
+`agent-browser --version`.
 
 Expect an `EBADENGINE` warning on Node < 24; the CLI still works. See
 `skills/job-apply-core/references/agent-browser.md` for the full usage guide (connect, tab hygiene,
@@ -354,6 +360,10 @@ while the server itself refused to start on Node 20.15.0):
 2. **Binary launches.** `npx -y chrome-devtools-mcp@latest --help` must exit 0. A Node
    floor error here (`does not support Node vX, upgrade to ...`) means the whole MCP is
    dead in every client — fix Node first (§3.6), this is never an MCP-config problem.
+   If the host instead logs `'npx' is not recognized`, the host's environment predates
+   the PATH change: harden the entry by replacing the bare `npx` command with the
+   absolute npx path (nvm's `.nodejs` shim dir is stable across version switches) and
+   restart the host — see the §9 troubleshooting table.
 3. **End-to-end handshake.** With the debug browser running, start the server over stdio
    with the registered `--browserUrl`, send JSON-RPC `initialize` +
    `notifications/initialized` + `tools/list`, and expect a `serverInfo` result plus a
@@ -400,6 +410,7 @@ exception — not a general license to submit things.
 | `doctor.sh` says no usable Google backend | neither `gog` unlocks nor a python-backend token exists | run `gog auth add` or `google_setup.py --auth-url` |
 | `agent-browser tab list` shows only `about:blank` | attached to a fresh browser instead of your debug one | re-run `agent-browser connect <cdp_port>`; confirm the debug browser is actually listening on that port |
 | MCP calls fail at spawn / `does not support Node vX` in logs | stale Node below the MCP's floor (needs 20.19+; was 20.15.0 on 2026-10-07) | upgrade Node via version manager to latest LTS (§3.6); entries are not the problem — verify with §5.1 |
+| `'npx' is not recognized ... MCP server process exited with code 1` | the agent host was started before the Node/nvm PATH change, so its environment cannot resolve the bare `npx` command (Windows processes keep the PATH they started with) | preferred hardening: replace the bare `"npx"` command in both registrations (`~/.claude.json` mcpServers entry, OpenCode `mcp` entry) with the absolute npx path — nvm's `.nodejs` shim dir (e.g. `%LOCALAPPDATA%\<nvm home>\.nodejs\npx.exe`) is stable across Node version switches; then restart the agent host. Quick alternative: fully restart the host from a fresh terminal (a terminal opened before the PATH change still carries the old PATH). Verify with §5.1 |
 | MCP registered but tools never appear, or wrong browser answers | stale second Node earlier on PATH shadowing the managed one (system PATH precedes user PATH on Windows) | delete the stale folder + its PATH entries (HKLM needs admin), `where node` must hit the managed install first (§5.1 step 4) |
 | chrome-devtools MCP calls fail with "received undefined" | known MCP parameter bug on some builds | fall back to `skills/job-apply-core/scripts/cdp.py` (raw CDP, last resort) |
 | Sheet row lands in the wrong columns | a hand-rolled append instead of `sheet_append.py` | always use `python3 skills/job-apply-core/scripts/sheet_append.py append '<json-row>'` |

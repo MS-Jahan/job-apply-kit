@@ -123,6 +123,11 @@ https://nodejs.org/download/release/index.json (first entry with an `lts` codena
   `nodejs macos install`.
 - Linux: nvm (https://github.com/nvm-sh/nvm): `nvm install --lts` (distro packages
   freeze old minors — avoid). Fallback query: `nodejs linux install nvm`.
+- After any Node/PATH change: already-running agent hosts keep their old environment
+  (a child MCP spawn then fails with `'npx' is not recognized`). Fully restart agent
+  hosts from a fresh terminal, or harden the MCP registration by replacing the bare
+  `npx` command with the absolute npx path (nvm's `.nodejs` shim dir is stable across
+  version switches). Verification flow: `docs/EXTERNAL_TOOLS.md` §5.1.
 - Then, always **globally** (`-g`; the per-project local install is
   known-broken on Windows): `npm install -g agent-browser@latest` and put the
   global bin dir on PATH (`~/.npm-global/bin` on Linux/macOS; automatic on

@@ -109,3 +109,15 @@ claude mcp add chrome-devtools -s user -- npx -y chrome-devtools-mcp@latest --br
 
 JSON equivalents for `.mcp.json` / `opencode.json` are in `docs/EXTERNAL_TOOLS.md` §5. Point it at the
 same debug port as `agent-browser`.
+
+**If the MCP fails to start** (toast/log like `MCP server process exited with code 1: 'npx' is not
+recognized`, or tools never appear): the registration alone proves nothing — run the three-layer
+check in `docs/EXTERNAL_TOOLS.md` §5.1 (config entry → binary launches → live handshake). The two
+known causes, both hit in practice:
+1. Node below the MCP's floor (`does not support Node vX`) — fix Node first (§3.6, latest LTS via
+   nvm), never the MCP config.
+2. `'npx' is not recognized` — the agent host was started before the Node PATH change, so its
+   environment can't resolve the bare `npx`. Harden by replacing the bare `npx` command in both
+   registrations with the absolute npx path (nvm's `.nodejs` shim dir is stable across version
+   switches), then fully restart the host. A host restarted from a stale terminal keeps the old
+   PATH — open a fresh terminal first.

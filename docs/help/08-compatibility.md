@@ -17,7 +17,7 @@ researched from upstream releases and docs, not run by the author — correction
 | Debug browser + CDP attach | yes | yes | yes — launch command in [Browser setup](03-browser-setup.md); close Chrome before reusing a locked profile |
 | `gog` backend | yes | yes | yes — upstream ships `windows_amd64` / `windows_arm64` zips; file keyring backend works the same |
 | Python OAuth backend | yes | yes | yes — browser-based loopback flow, no OS-specific parts |
-| chrome-devtools MCP via `npx` | yes | yes | yes — needs Node only; point at the same debug port |
+| chrome-devtools MCP via `npx` | yes | yes | yes — needs Node only; point at the same debug port. If the host logs `'npx' is not recognized`, its environment predates the PATH change: use the absolute npx path (nvm `.nodejs` shim dir) and restart the host ([Browser setup §3](03-browser-setup.md), `docs/EXTERNAL_TOOLS.md` §5.1) |
 | `curl` port probe | yes | yes | built into Windows 10/11 (`curl.exe`) |
 
 Net: tailor-only mode works natively on all three OSes. Full apply mode works natively on Windows
