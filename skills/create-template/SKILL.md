@@ -68,7 +68,51 @@ Also produce a `.md` copy of the cover letter (`CL_<CAT>.md`) for the Markdown/D
    If it fails, adjust spacing/density first; never invent content to fill a page, never cut real
    content to shrink it.
 7. **Last-page fill**: the CV's page 2 and the resume should end with minimal blank space (OPERATIONS
-   #format density rule).
+   #format density rule). Measure, don't eyeball: `pdftotext -bbox <file>.pdf -` gives every
+   `<word ... yMax="...">`; bottom whitespace = page height minus max yMax (minus the bottom
+   margin). Targets: resume and CV page 2 content whitespace at most ~70pt; cover letter at most
+   ~130pt (letters conventionally run 70-80% of a page — fill with substance, never pad).
+   Fill order is content first, spacing second: expand the summary (max 3 sentences), broaden
+   project blurbs to 2-3 lines each from source facts, add one or two secondary (even
+   less-relevant) projects when the relevant pool is exhausted, add extra certification lines,
+   and keep the CV's Extracurriculars section (it is part of the live source mirror). Only then
+   tune `\linespread` (stay at or under ~1.26), `itemsep`, `titlespacing`. Never invent content
+   to fill a page, never cut real content to shrink one. Naming: a 1-page document is a resume;
+   only a multi-page document is called a CV.
+
+### Step 4b: cover-letter density
+Letters use the sender letterhead block (name, location, contact, links), a `[[WHY_COMPANY]]`
+per-job slot appended to paragraph 1, three proof paragraphs with metrics, a concrete close, and
+an `Enclosed with this letter: my resume.` line; `.md` mirrors `.tex` exactly (placeholders stay
+raw in `.md`, `\_`-escaped in `.tex` so they compile — see Production notes). Top/bottom margins
+0.75in, sides 1in.
+
+## Production notes (learned 2026-10-07, keep updated)
+
+- **Never use `\color` (or any xcolor command) in the CL skeleton** — it ships without xcolor and
+  compilation fails with `Undefined control sequence`. The same holds for any package not in the
+  skeleton preamble: check before using.
+- **CL placeholders must be `\_`-escaped in `.tex`** (`[[COMPANY\_NAME]]` renders identically in
+  the PDF; raw `_` is fatal in LaTeX text mode). Keep raw `[[COMPANY_NAME]]` in the `.md` copy.
+  Per-application fill must match the escaped form in `.tex`.
+- **Token sweep after generation**: `grep -c "\[\[" templates/*.tex` — CV/resume files must show 0;
+  CL files show only the intended per-job placeholders.
+- **tectonic parallel runs collide** writing the format file (`format-file write` failure). Compile
+  serially (one file per command, or retry on failure) — the failure is transient and unrelated to
+  sources. Never run two `tectonic -X compile` processes at once.
+- **Keep the compiled PDFs.** `INDEX.md` references `.pdf` files and the apply skills attach them;
+  do not delete PDFs after verification.
+- **Windows shell discipline**: run all kit and compile commands in Git Bash, never PowerShell
+  (PowerShell mangles quoting, pipes like `tail`, and stderr). Set `PYTHONUTF8=1` (or
+  `PYTHONIOENCODING=utf-8`) before any Python script whose output may contain non-ASCII
+  (`--help` texts and error paths contain unicode arrows).
+- **Google Docs sources**: the `/edit` canvas snapshots near-empty — always rewrite
+  `.../document/d/<id>/...` to `.../document/d/<id>/mobilebasic` and read `innerText` there.
+  `.../export?format=txt` triggers a download instead of navigation; prefer the mobilebasic view.
+- **Truth in paraphrase**: stay close to source verbs and mechanics. Do not add unstated release
+  mechanics (e.g. "staged rollouts", "store assets") to a Play-release claim, and do not add
+  forward-looking promises (e.g. documenting for the next developer) that the source never states.
+  Metrics stay exact; cross-stack claims stay inside the source's skill lists.
 
 ### Step 5: register in the index
 Create or update `<templates_dir>/INDEX.md`, one block per category (format below). Never silently

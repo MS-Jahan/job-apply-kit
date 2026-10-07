@@ -45,7 +45,7 @@ ALIASES = {
     "drive_link": ["resumedrive", "drive", "drivelink", "resume", "resumelink", "cv", "cvlink", "document"],
     "job_nature": ["jobnature", "nature", "employmenttype", "employment"],
     "job_type": ["jobtype", "type", "workplace", "workmode", "workplacetype"],
-    "location": ["location", "city", "place"],
+    "location": ["location", "companylocation", "city", "place"],
     "job_link": ["joblink", "link", "url", "post", "posting", "postingurl", "postlink", "applylink", "joburl"],
     "job_desc": ["jobdescription", "description", "jd", "details", "jobdetails"],
     "status": ["jobstatus", "status", "state", "stage"],
