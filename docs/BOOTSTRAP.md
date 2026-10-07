@@ -38,9 +38,9 @@ When the user asks you to set up, fix, or verify their environment:
    allowed), then generate launchers + desktop shortcuts with `--create`.
    Never launch or kill the user's everyday browser yourself — hand them the
    shortcut and let them click it.
-6. **Finish the kit:** `./install.sh` (or `python install.py`), then config —
-   which asks for the CV and the tracker Sheet URL together (adopt or create) —
-   see section 4.
+6. **Finish the kit:** `./install.sh` (or `python install.py`) registers MCP + PATH,
+   then config — which asks for the CV and the tracker Sheet URL together (adopt or create) —
+   see section 4. Skills run from this repo; nothing is copied anywhere.
 
 Rules: ask before installing anything system-wide the user did not request;
 prefer user-scope installs (pip `--user`, npm global prefix, portable zips,
@@ -253,7 +253,7 @@ the click-through guide is in `docs/help/03-browser-setup.md`.
 ## 4. Finish the kit
 
 ```bash
-./install.sh                    # or: python install.py  (registers skills + MCP servers)
+./install.sh                    # or: python install.py  (registers MCP servers, PATH, tools.json)
 python doctor.py --mode all     # or: py -3 doctor.py --mode all
 ```
 
@@ -266,9 +266,9 @@ truncated page), so the agent routes every CV through
 `sheet_init.py --adopt`, or created fresh with `sheet_init.py` when the user has none —
 pasted into config `sheet_url`), then `/create-template`.
 
-Later, to pull new kit code and reinstall in one step:
+Later, to pull new kit code and re-run setup in one step:
 `python install.py --update` (refuses when the checkout is dirty — rules in
-the README "Updating the kit" section).
+the README "Updating the kit" section). Skills run in place, so no reinstall step exists.
 
 ## 5. When the internet moves on
 

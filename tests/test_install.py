@@ -1,8 +1,24 @@
-import json, os, subprocess, sys, tempfile, unittest
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 INSTALL = str(REPO / "install.py")
+
+
+def base_env(tmp):
+    t = Path(tmp)
+    return dict(os.environ,
+                JAK_CLAUDE_BIN=str(t / "no-claude"),
+                JAK_MANIFEST=str(t / "unused-manifest.json"),
+                JAK_CONFIG=str(t / "none.md"),
+                JAK_CLAUDE_CONFIG=str(t / "claude.json"),
+                JAK_OPENCODE_CONFIG=str(t / "opencode.json"),
+                JAK_TOOLS_FILE=str(t / "tools.json"))
 
 
 def run(args, env):
@@ -12,56 +28,49 @@ def run(args, env):
 class InstallTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.dest = Path(self.tmp.name) / "skills"
-        self.env = dict(os.environ, JAK_MANIFEST=str(Path(self.tmp.name) / "manifest.json"))
+        self.env = base_env(self.tmp.name)
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_install_renders_tokens_and_manifest(self):
-        r = run(["--dest", str(self.dest)], self.env)
+    def test_list_validates_every_skill(self):
+        r = run(["--list"], self.env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("job-apply-core", r.stdout)
+        self.assertIn("humanizer", r.stdout)
+
+    def test_default_run_registers_mcp_and_records_tools(self):
+        r = run([], self.env)
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
-        md = (self.dest / "job-apply-core" / "SKILL.md").read_text()
-        self.assertNotIn("{{", md)
-        self.assertIn(str(self.dest / "job-apply-core"), md)
-        manifest = json.loads(Path(self.env["JAK_MANIFEST"]).read_text())
-        self.assertIn(str(self.dest / "job-apply-core"), manifest)
+        cc = json.loads(Path(self.env["JAK_CLAUDE_CONFIG"]).read_text())
+        self.assertIn("chrome-devtools", cc["mcpServers"])
+        oc = json.loads(Path(self.env["JAK_OPENCODE_CONFIG"]).read_text())
+        self.assertIn("chrome-devtools", oc["mcp"])
+        self.assertIn("in place, nothing copied", r.stdout)
 
-    def test_uninstall_removes_only_manifest_entries(self):
-        other = self.dest / "someone-elses-skill"
-        other.mkdir(parents=True)
-        (other / "SKILL.md").write_text("---\nname: someone-elses-skill\ndescription: x\n---\n")
-        run(["--dest", str(self.dest)], self.env)
-        r = run(["--dest", str(self.dest), "--uninstall"], self.env)
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertFalse((self.dest / "job-apply-core").exists())
-        self.assertTrue(other.exists())
+    def test_no_mcp_flag_skips_registration(self):
+        r = run(["--no-mcp"], self.env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        self.assertFalse(Path(self.env["JAK_CLAUDE_CONFIG"]).exists())
+        self.assertFalse(Path(self.env["JAK_OPENCODE_CONFIG"]).exists())
 
-    def test_refuses_to_overwrite_foreign_skill(self):
-        foreign = self.dest / "job-apply-core"
-        foreign.mkdir(parents=True)
-        (foreign / "SKILL.md").write_text("---\nname: job-apply-core\ndescription: foreign\n---\n")
-        r = run(["--dest", str(self.dest)], self.env)
-        self.assertNotEqual(r.returncode, 0)
-        self.assertIn("--force", r.stderr + r.stdout)
-        r = run(["--dest", str(self.dest), "--force"], self.env)
-        self.assertEqual(r.returncode, 0, r.stderr)
+    def test_no_path_flag_skips_tools_record(self):
+        r = run(["--no-path"], self.env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        self.assertFalse(Path(self.env["JAK_TOOLS_FILE"]).exists())
 
-    def test_dry_run_writes_nothing(self):
-        r = run(["--dest", str(self.dest), "--dry-run"], self.env)
-        self.assertEqual(r.returncode, 0)
-        self.assertFalse(self.dest.exists())
-        self.assertFalse(Path(self.env["JAK_MANIFEST"]).exists())
+    def test_dry_run_changes_nothing(self):
+        r = run(["--dry-run"], self.env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        t = Path(self.tmp.name)
+        self.assertFalse((t / "claude.json").exists())
+        self.assertFalse((t / "opencode.json").exists())
+        self.assertFalse((t / "tools.json").exists())
 
-    def test_link_mode_symlinks_scripts_but_renders_markdown(self):
-        run(["--dest", str(self.dest), "--link"], self.env)
-        script = self.dest / "job-apply-core" / "scripts" / "jak_config.py"
-        self.assertTrue(script.is_symlink())
-        self.assertFalse((self.dest / "job-apply-core" / "SKILL.md").is_symlink())
-
-    def test_every_shipped_skill_has_valid_frontmatter(self):
-        r = run(["--dest", str(self.dest), "--dry-run"], self.env)
-        self.assertEqual(r.returncode, 0, r.stderr)
+    def test_removed_copy_flags_are_rejected(self):
+        for flag in (["--dest", "x"], ["--uninstall"], ["--link"], ["--target", "claude"]):
+            r = run(flag, self.env)
+            self.assertNotEqual(r.returncode, 0, flag)
 
 
 if __name__ == "__main__":

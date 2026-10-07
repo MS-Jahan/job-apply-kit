@@ -94,10 +94,13 @@ class McpTests(unittest.TestCase):
         self.assertIn("chrome-devtools", cfg["mcp"]["servers"])
         self.assertIn("other", cfg["mcp"]["servers"])
 
-    def test_install_with_dest_does_not_touch_mcp(self):
-        d = Path(self.tmp.name) / "skills"
-        subprocess.run([sys.executable, INSTALL, "--dest", str(d)], capture_output=True, text=True, env=self.env)
+    def test_no_mcp_flag_skips_registration(self):
+        r = subprocess.run([sys.executable, INSTALL, "--no-mcp", "--no-path"],
+                           capture_output=True, text=True, env=self.env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertFalse((self.claude.parent / "log").exists())
+        self.assertFalse(self.cc.exists())
+        self.assertFalse(self.oc.exists())
 
     def test_server_definition_valid(self):
         data = json.loads((REPO / "mcp" / "servers.json").read_text())

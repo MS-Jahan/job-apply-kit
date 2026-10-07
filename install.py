@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
-"""Install job-apply-kit skills into an agent skills directory.
+"""Set up job-apply-kit integrations (no skill files are copied anywhere).
 
-  ./install.sh [skill ...]            install named skills (default: all) plus their requires.txt closure
-  --target claude|opencode|agents     claude -> ~/.claude/skills (default; OpenCode reads it too)
-                                      opencode -> ~/.config/opencode/skills, agents -> ~/.agents/skills
-  --dest DIR                          explicit destination (overrides --target; used by tests)
-  --link                              symlink files instead of copying (SKILL.md and docs are still rendered)
-  --uninstall [skill ...]             remove what this installer put there (default: all in the manifest)
-  --force                             overwrite a same-named skill not installed by this tool
+  ./install.sh                          register MCP servers + user PATH + tools.json record
+  --list                              list available skills (validates names + descriptions)
   --dry-run                           print actions only
   --with-examples                     copy examples/templates into an empty templates dir
-  --list                              list available skills
   --no-mcp                            skip MCP registration
-  --setup-mcp-only                    only register MCP servers (no skill install)
+  --setup-mcp-only                    only register MCP servers (no PATH/examples work)
   --no-path                           skip user-PATH update and tools.json record (both on by default)
   --update                            git pull --ff-only first, then install (refuses when
                                       the checkout is dirty; see "Updating the kit" in README.md)
@@ -25,13 +19,10 @@ merge ~/.claude.json directly, user scope), and create or merge the OpenCode
 global config (~/.config/opencode/opencode.json) whether or not that file
 already exists. Existing entries are never changed or overwritten.
 Env overrides (used by tests): JAK_CLAUDE_BIN, JAK_CLAUDE_CONFIG,
-JAK_OPENCODE_CONFIG (else OPENCODE_CONFIG), JAK_MANIFEST.
+JAK_OPENCODE_CONFIG (else OPENCODE_CONFIG).
 
-Tokens replaced in SKILL.md and other *.md files inside an installed skill:
-  {{SKILL_DIR}}  absolute path of that installed skill
-  {{CORE_DIR}}   absolute path of the installed job-apply-core skill (alias for job-apply-core)
-  {{<NAME>_DIR}} absolute path of any OTHER installed skill in this run, NAME = the skill's directory
-                 name upper-cased with hyphens turned to underscores (e.g. resume-kit -> RESUME_KIT_DIR)
+Skills are used in place from this repo: {{CORE_DIR}} resolves to
+<repo>/skills/job-apply-core and {{SKILL_DIR}} to the skill's own directory.
 """
 from __future__ import annotations
 
@@ -45,12 +36,6 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
 SKILLS_SRC = REPO / "skills"
-TARGETS = {
-    "claude": "~/.claude/skills",
-    "opencode": "~/.config/opencode/skills",
-    "agents": "~/.agents/skills",
-}
-MANIFEST = Path(os.path.expanduser(os.environ.get("JAK_MANIFEST") or "~/.config/job-apply-kit/installed.json"))
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 CORE = "job-apply-core"
 
@@ -90,88 +75,6 @@ def requires(name: str) -> list[str]:
     if not f.is_file():
         return []
     return [l.strip() for l in f.read_text().splitlines() if l.strip() and not l.startswith("#")]
-
-
-def closure(names: list[str]) -> list[str]:
-    seen: list[str] = []
-    def visit(n: str) -> None:
-        if n in seen:
-            return
-        if n not in available():
-            raise SystemExit(f"unknown skill or missing dependency: {n}")
-        for r in requires(n):
-            visit(r)
-        seen.append(n)
-    for n in names:
-        visit(n)
-    return seen
-
-
-def token_name(skill_name: str) -> str:
-    if skill_name == CORE:
-        return "CORE_DIR"
-    return skill_name.upper().replace("-", "_") + "_DIR"
-
-
-def render(text: str, skill_dir: Path, tokens: dict[str, str]) -> str:
-    text = text.replace("{{SKILL_DIR}}", str(skill_dir))
-    for token, path in tokens.items():
-        text = text.replace("{{%s}}" % token, path)
-    return text
-
-
-def load_manifest() -> dict:
-    if MANIFEST.is_file():
-        return json.loads(MANIFEST.read_text())
-    return {}
-
-
-def save_manifest(m: dict) -> None:
-    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
-    MANIFEST.write_text(json.dumps(m, indent=2, sort_keys=True))
-
-
-def install_one(name: str, dest: Path, tokens: dict[str, str], link: bool, force: bool, dry: bool, manifest: dict) -> None:
-    src = SKILLS_SRC / name
-    out = dest / name
-    key = str(out)
-    if (out.exists() or out.is_symlink()) and key not in manifest and not force:
-        raise SystemExit(f"{out} exists and was not installed by job-apply-kit (use --force to replace)")
-    print(f"install {name} -> {out}{' (link)' if link else ''}")
-    if dry:
-        return
-    if out.exists() or out.is_symlink():
-        shutil.rmtree(out) if out.is_dir() and not out.is_symlink() else out.unlink()
-    files = []
-    for p in sorted(src.rglob("*")):
-        if p.is_dir() or "__pycache__" in p.parts:
-            continue
-        rel = p.relative_to(src)
-        target = out / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if p.suffix == ".md":
-            target.write_text(render(p.read_text(encoding="utf-8"), out, tokens), encoding="utf-8")
-        elif link:
-            target.symlink_to(p)
-        else:
-            shutil.copy2(p, target)
-        files.append(str(rel))
-    manifest[key] = {"skill": name, "files": files}
-
-
-def uninstall(names: list[str], manifest: dict, dry: bool) -> None:
-    keys = [k for k, v in manifest.items() if not names or v["skill"] in names]
-    if not keys:
-        print("nothing to uninstall")
-    for k in keys:
-        print(f"remove {k}")
-        if not dry:
-            p = Path(k)
-            if p.is_dir() and not p.is_symlink():
-                shutil.rmtree(p)
-            elif p.exists() or p.is_symlink():
-                p.unlink()
-            del manifest[k]
 
 
 def _templates_dir() -> Path:
@@ -460,12 +363,6 @@ def ensure_path_and_record(dry: bool) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("skills", nargs="*")
-    ap.add_argument("--target", choices=TARGETS, default="claude")
-    ap.add_argument("--dest")
-    ap.add_argument("--link", action="store_true")
-    ap.add_argument("--uninstall", action="store_true")
-    ap.add_argument("--force", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--with-examples", action="store_true")
     ap.add_argument("--list", action="store_true")
@@ -479,43 +376,25 @@ def main(argv=None) -> int:
         for n in available():
             print(n + ("  (requires: " + ", ".join(requires(n)) + ")" if requires(n) else ""))
         return 0
-    if a.update and (a.uninstall or a.dest):
-        raise SystemExit("--update cannot be combined with --uninstall or --dest")
-    if a.setup_mcp_only:
-        setup_mcp(a.dry_run)
-        return 0
     if a.update:
         rc = git_update(a.dry_run)
         if rc != 0:
             return rc
-    dest = Path(os.path.expanduser(a.dest or TARGETS[a.target]))
-    manifest = load_manifest()
-    if a.uninstall:
-        uninstall(a.skills, manifest, a.dry_run)
-        if not a.dry_run:
-            save_manifest(manifest)
+    if a.setup_mcp_only:
+        setup_mcp(a.dry_run)
+        print(f"\nSkills run from {SKILLS_SRC} (in place, nothing copied).")
+        print("Next: create your config (see config.example.md), then run ./doctor.sh")
         return 0
-    names = closure(a.skills or available())
-    if not names:
-        print("no skills found under skills/")
-        return 1
-    for n in names:
+    for n in available():
         validate(n)
-    if CORE not in names and CORE in available():
-        names.insert(0, CORE)
-    tokens = {token_name(n): str(dest / n) for n in names}
-    dest.mkdir(parents=True, exist_ok=True) if not a.dry_run else None
-    for n in names:
-        install_one(n, dest, tokens, a.link, a.force, a.dry_run, manifest)
-    if not a.dry_run:
-        save_manifest(manifest)
+    if not a.no_mcp:
+        setup_mcp(a.dry_run)
     if a.with_examples:
         with_examples(a.dry_run)
-    if not a.no_mcp and not a.dest:
-        setup_mcp(a.dry_run)
-    if not a.no_path and not a.dest:
+    if not a.no_path:
         ensure_path_and_record(a.dry_run)
-    print("\nNext: create your config (see config.example.md), then run ./doctor.sh")
+    print(f"\nSkills run from {SKILLS_SRC} (in place, nothing copied).")
+    print("Next: create your config (see config.example.md), then run ./doctor.sh")
     return 0
 
 

@@ -82,9 +82,12 @@ class WithExamplesInstallTests(unittest.TestCase):
         import os
         with tempfile.TemporaryDirectory() as d:
             tpl = Path(d) / "templates"
-            env = dict(os.environ, JAK_TEMPLATES_DIR=str(tpl), JAK_MANIFEST=str(Path(d) / "m.json"))
-            r = subprocess.run([sys.executable, str(REPO / "install.py"), "--dest", str(Path(d) / "skills"),
-                               "job-apply-core", "--with-examples", "--no-mcp"],
+            env = dict(os.environ, JAK_TEMPLATES_DIR=str(tpl),
+                       JAK_CLAUDE_CONFIG=str(Path(d) / "cc.json"),
+                       JAK_OPENCODE_CONFIG=str(Path(d) / "oc.json"),
+                       JAK_TOOLS_FILE=str(Path(d) / "t.json"))
+            r = subprocess.run([sys.executable, str(REPO / "install.py"),
+                               "--with-examples", "--no-mcp", "--no-path"],
                                capture_output=True, text=True, env=env)
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertTrue((tpl / "INDEX.md").is_file())
@@ -96,9 +99,12 @@ class WithExamplesInstallTests(unittest.TestCase):
             tpl = Path(d) / "templates"
             tpl.mkdir()
             (tpl / "mine.tex").write_text("real content")
-            env = dict(os.environ, JAK_TEMPLATES_DIR=str(tpl), JAK_MANIFEST=str(Path(d) / "m.json"))
-            subprocess.run([sys.executable, str(REPO / "install.py"), "--dest", str(Path(d) / "skills"),
-                           "job-apply-core", "--with-examples", "--no-mcp"],
+            env = dict(os.environ, JAK_TEMPLATES_DIR=str(tpl),
+                       JAK_CLAUDE_CONFIG=str(Path(d) / "cc.json"),
+                       JAK_OPENCODE_CONFIG=str(Path(d) / "oc.json"),
+                       JAK_TOOLS_FILE=str(Path(d) / "t.json"))
+            subprocess.run([sys.executable, str(REPO / "install.py"),
+                           "--with-examples", "--no-mcp", "--no-path"],
                            capture_output=True, text=True, env=env)
             self.assertFalse((tpl / "INDEX.md").exists())
             self.assertEqual((tpl / "mine.tex").read_text(), "real content")

@@ -70,23 +70,18 @@ class ResumeSkillFrontmatterTests(unittest.TestCase):
 
 
 class InstalledResumeSkillTests(unittest.TestCase):
-    """Prove the {{RESUME_KIT_DIR}} token and cross-skill dependency actually resolve after install."""
+    """Cross-skill token references resolve from the repo checkout (skills run in place)."""
 
-    def test_char_count_reachable_from_installed_make_resume(self):
-        with tempfile.TemporaryDirectory() as d:
-            dest = Path(d) / "skills"
-            r = subprocess.run([sys.executable, str(REPO / "install.py"), "--dest", str(dest), "make-resume"],
-                               capture_output=True, text=True)
-            self.assertEqual(r.returncode, 0, r.stderr)
-            self.assertTrue((dest / "resume-kit").is_dir())
-            text = (dest / "make-resume" / "SKILL.md").read_text()
-            self.assertNotIn("{{", text)
-            m = re.search(r"python3 (\S*helpers/char_count\.py)", text)
-            self.assertIsNotNone(m)
-            helper = Path(m.group(1))
-            self.assertTrue(helper.is_file(), helper)
-            r2 = subprocess.run([sys.executable, str(helper), "--help"], capture_output=True, text=True)
-            self.assertIn(r2.returncode, (0, 1, 2))  # just must run, not crash on import/path errors
+    def test_char_count_reachable_via_token_resolution(self):
+        text = (REPO / "skills" / "make-resume" / "SKILL.md").read_text()
+        m = re.search(r"python3 (\S*helpers/char_count\.py)", text)
+        self.assertIsNotNone(m)
+        # OPERATIONS.md token rule: {{RESUME_KIT_DIR}} = <repo>/skills/resume-kit
+        resolved = m.group(1).replace("{{RESUME_KIT_DIR}}", str(REPO / "skills" / "resume-kit"))
+        helper = Path(resolved)
+        self.assertTrue(helper.is_file(), helper)
+        r2 = subprocess.run([sys.executable, str(helper), "--help"], capture_output=True, text=True)
+        self.assertIn(r2.returncode, (0, 1, 2))  # just must run, not crash on import/path errors
 
 
 class CreateTemplateSkeletonTests(unittest.TestCase):

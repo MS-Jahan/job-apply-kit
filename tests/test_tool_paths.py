@@ -80,9 +80,8 @@ class ToolPathsTests(unittest.TestCase):
 
     def test_install_no_path_flag(self):
         env = dict(os.environ, JAK_TOOLS_FILE=str(self.t / "t2.json"),
-                   JAK_MANIFEST=str(self.t / "m.json"), JAK_CONFIG=str(self.t / "none.md"))
-        dest = self.t / "skills"
-        r = subprocess.run([sys.executable, str(REPO / "install.py"), "--dest", str(dest), "--dry-run"],
+                   JAK_CONFIG=str(self.t / "none.md"))
+        r = subprocess.run([sys.executable, str(REPO / "install.py"), "--no-path", "--no-mcp"],
                            capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertFalse((self.t / "t2.json").exists())

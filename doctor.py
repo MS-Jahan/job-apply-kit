@@ -126,14 +126,13 @@ def check_config(cfg_path: str | None):
     return cfg
 
 
-def skills_dirs() -> list[Path]:
-    return [Path(os.path.expanduser(p)) for p in ("~/.claude/skills", "~/.config/opencode/skills", "~/.agents/skills")]
-
-
 def check_skills() -> None:
-    for name in ("job-apply-core", "humanizer"):
-        found = any((d / name / "SKILL.md").is_file() for d in skills_dirs())
-        add("OK" if found else "MISSING", f"skill {name} installed", "" if found else "run ./install.sh")
+    # Skills are used in place from this repo (install.py copies nothing).
+    repo_skills = REPO / "skills"
+    names = sorted(p.name for p in repo_skills.iterdir() if (p / "SKILL.md").is_file()) if repo_skills.is_dir() else []
+    ok = "job-apply-core" in names and "humanizer" in names
+    add("OK" if ok else "MISSING", f"skills in repo ({len(names)}: {', '.join(names) if names else 'none'})",
+        "" if ok else "re-clone the repo (skills/ must contain SKILL.md folders)")
 
 
 def check_google(cfg) -> None:

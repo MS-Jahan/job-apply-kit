@@ -42,14 +42,30 @@ agent self-install procedure. Short version
 ```bash
 git clone <this-repo> job-apply-kit
 cd job-apply-kit
-./install.sh              # installs every skill + registers the chrome-devtools MCP fallback
+./install.sh              # registers the chrome-devtools MCP, user PATH, tools.json record
 ./doctor.sh --mode all    # reports what's missing for your mode (tailor / apply / all)
 ```
 
-Install only what you need: `./install.sh make-resume` pulls in just the resume-kit dependency chain;
-`./install.sh bdjobs-full-run` pulls in only `job-apply-core` + `humanizer`. Run `./install.sh --list`
-to see every skill and its dependencies, `--uninstall` to remove what you installed, `--link` for a
-symlinked dev setup that stays in sync with this checkout.
+Skills are used in place from `skills/` — nothing is copied into agent directories.
+Agents read `skills/<name>/SKILL.md` directly (the `CORE_DIR` path token in skill
+files means `<repo>/skills/job-apply-core`; see `OPERATIONS.md` for all token
+resolutions). Run `./install.sh --list` to validate every
+skill, `--with-examples` to seed an empty templates dir.
+
+If you installed an older kit version that copied skills into
+`~/.claude/skills` (or the OpenCode/agents equivalents), delete those copies
+once — they are stale generated files and shadow nothing anymore:
+
+```bash
+rm -rf ~/.claude/skills/bdjobs-full-run ~/.claude/skills/check-discord-jobs \
+  ~/.claude/skills/check-facebook-saved ~/.claude/skills/check-image-batch \
+  ~/.claude/skills/check-linkedin-saved ~/.claude/skills/create-template \
+  ~/.claude/skills/critique ~/.claude/skills/edit-resume ~/.claude/skills/humanizer \
+  ~/.claude/skills/job-apply-core ~/.claude/skills/linkedin-full-run \
+  ~/.claude/skills/linkedin-job-search ~/.claude/skills/make-cover-letter \
+  ~/.claude/skills/make-resume ~/.claude/skills/resume-kit \
+  ~/.claude/skills/setup-build-kb ~/.claude/skills/setup-extract
+```
 
 ## Updating the kit
 
@@ -59,13 +75,11 @@ One command, run inside this checkout:
 ./install.sh --update        # or: python install.py --update
 ```
 
-It runs `git pull --ff-only` and then reinstalls every skill + MCP entry from
-the fresh code. Three rules make this conflict-free:
+It runs `git pull --ff-only` and then re-runs setup (MCP entries + PATH) from
+the fresh code — skills need no reinstalling since they run from this repo.
+Three rules make this conflict-free:
 
-1. **Never edit kit files in place.** Installed skills under
-   `~/.claude/skills` (or the OpenCode/agents equivalents) are generated
-   copies — reinstalling overwrites them, by design. Propose changes via a
-   branch/PR instead.
+1. **Never edit kit files in place.** Propose changes via a branch/PR instead.
 2. **Personal data already lives outside the repo** (config file, workspace
    templates, `JDs/`, tracker) — pulling can never touch it.
 3. **If the checkout is dirty, `--update` refuses** and lists the changed

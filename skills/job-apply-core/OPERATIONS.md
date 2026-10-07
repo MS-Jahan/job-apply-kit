@@ -38,6 +38,10 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 
 - Config is one markdown file: `$JAK_CONFIG` or `~/.config/job-apply-kit/config.md`. Load keys through `{{CORE_DIR}}/scripts/jak_config.py` (`--check`, `--show`, `--get KEY`). If a required key is missing, stop and ask; do not guess.
 - Config-first, every run: read this file, then load `config.md`, before any other step. Each skill lists the keys it reads under "Config keys read". The full key reference is `docs/help/00-config.md`.
+- Path tokens: `{{CORE_DIR}}` is `<kit-repo>/skills/job-apply-core` and `{{SKILL_DIR}}`
+  is the skill's own directory — resolved against this checkout, since skills are
+  used in place and never copied anywhere. `{{<NAME>_DIR}}` (e.g. `{{RESUME_KIT_DIR}}`)
+  is `<kit-repo>/skills/<name-lowercased-with-hyphens>`.
 - Missing keys: gate every key the task needs through
   `python3 {{CORE_DIR}}/scripts/jak_config.py --need KEY` (add `--optional` for
   keys the task can live without) BEFORE using it. Exit 0 = proceed. Exit 2 =

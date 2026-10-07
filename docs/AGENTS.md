@@ -1,7 +1,8 @@
 # Other agents: skills + MCP locations
 
-The kit installs skills and MCP servers for Claude Code and OpenCode
-(`install.py`, `docs/EXTERNAL_TOOLS.md` §5). Everything else on this page is
+The kit registers MCP servers for Claude Code and OpenCode
+(`install.py`, `docs/EXTERNAL_TOOLS.md` §5); skills themselves stay in this repo
+and are read in place. Everything else on this page is
 for the other harnesses. Paths below were verified against official docs in
 Oct 2026; when a vendor moves things, re-anchor with the fallback query and
 update this file. Aggregators worth bookmarking: https://clients.dev and
