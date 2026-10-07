@@ -82,7 +82,8 @@ installed, just tell your agent:
 
 The `job-apply-core` skill walks through it: identity, your CV/resume source URLs, truth-gate lists
 (skills you don't actually have, so they're never claimed), and leaves Google/Sheet ids for the next
-step. Then run the one-time setup that creates your tracker:
+step. Set up the debug browser first — CVs living in Google Docs are read through it, and a plain
+web fetch only returns a truncated page. Then run the one-time setup that creates your tracker:
 
 ```bash
 python3 skills/job-apply-core/scripts/sheet_init.py

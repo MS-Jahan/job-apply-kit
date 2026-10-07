@@ -234,8 +234,11 @@ python doctor.py --mode all     # or: py -3 doctor.py --mode all
 ```
 
 Then the personal config (`config.example.md` is the template; easiest is
-telling the agent "set up my job-apply-kit config from my CV at <file/url>"),
-then the one-time tracker setup
+telling the agent "set up my job-apply-kit config from my CV at <file/url>").
+The debug browser (§3 above) must be running BEFORE the config step — CVs
+living in Google Docs can only be read through it (plain web fetch returns a
+truncated page), so the agent routes every CV through
+`cv_fetch.py` first. Then the one-time tracker setup
 (`python3 skills/job-apply-core/scripts/sheet_init.py`), then `/create-template`.
 
 Later, to pull new kit code and reinstall in one step:

@@ -13,7 +13,20 @@ Config is one markdown file: `$JAK_CONFIG`, else `~/.config/job-apply-kit/config
 
 When the user asks to set up or update the config from their CV:
 
-1. Ask for the CV (URL or file path). Read it fully.
+0. Browser first. The CV often lives in Google Docs, which a plain web fetch
+   cannot read (truncated page). Finish `docs/BOOTSTRAP.md` §3 before asking
+   for the CV: debug browser running, `agent-browser connect` attached.
+1. Ask for the CV (URL or file path). Route it through the read plan first:
+   ```bash
+   python3 {{CORE_DIR}}/scripts/cv_fetch.py "<url-or-path>"
+   ```
+   and follow its `method`: `local-file` → read directly; `google-docs` /
+   `google-drive-file` → open the link in the debug browser
+   (`agent-browser open` + `snapshot`, scroll to the last line — the user is
+   already logged in there); `web` → fetch, then confirm the FULL text
+   arrived (contact block to last line), re-reading via the debug browser
+   when truncated or JS-gated. Never build a config from a partial read —
+   when in doubt, re-read through the browser and say so.
 2. Copy `config.example.md` to the config path if no config exists. Fill `name`, `name_file`, contact fields, links and `cv_source` from the CV. Do not invent values; leave unknowns empty and ask.
 3. For `banned_claims` and `unproven_claims`: ask the user, one skill group at a time ("Have you really used X?"). Never decide for them.
 4. Do not fill Google or sheet ids by hand. Tell the user to run `sheet_init` (it writes them), or ask them for existing ids.
@@ -45,6 +58,7 @@ any job, and follow its anchors when a skill references them.
 | `gmail_draft.py` | draft with attachments (wrapper over `jak_google.py draft`) |
 | `google_setup.py` | python-backend OAuth: `--account`, `--client-secret`, `--auth-url`, `--auth-code`, `--import-token`, `--check` |
 | `browser_setup.py` | detect Chromium browsers (`--list`), generate default-profile debug launchers + desktop shortcuts (`--browser chrome,brave --create`; `--profile`/`--isolated` only for opt-in separate profiles), pre-launch running check + guarded start (`--check-running`, `--launch`) |
+| `cv_fetch.py` | classify a CV source and print its read plan (`<url-or-path>`; google-docs/drive → debug browser, never plain fetch) |
 | `tool_paths.py` | record tool binary paths to tools.json (`--record`), add user-local bin dirs to the user PATH without admin (`--ensure-path`) |
 | `google_api.py` | general Google tool for agents: gmail search/get/labels, calendar, drive, contacts, sheets, docs (no mail send) |
 | `cdp.py`, `picker_upload.py` | raw CDP driver and Google Picker upload (last resort browser tools) |

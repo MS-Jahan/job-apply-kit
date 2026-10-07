@@ -2,6 +2,7 @@
 
 Copy this file to `~/.config/job-apply-kit/config.md` (or point `$JAK_CONFIG` at it) and fill it in.
 Easiest way: tell your agent "set up my job-apply-kit config from my CV <url or file path>".
+Set up the debug browser first (`docs/help/03-browser-setup.md`) — CVs in Google Docs are read through it.
 
 Rules for this file:
 - Script-read values are bullets written exactly as `- **key:** value` under the headings below.
