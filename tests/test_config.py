@@ -108,6 +108,15 @@ class ConfigTests(unittest.TestCase):
             self.assertIsNone(cfg.get("discord_channels"))
             self.assertEqual(jak_config.sync_keys(p), [])
 
+    def test_need_gate_exit_codes(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "c.md"
+            p.write_text("## Identity\n- **name:** Ada\n")
+            self.assertEqual(jak_config.main(["--config", str(p), "--need", "name"]), 0)
+            self.assertEqual(jak_config.main(["--config", str(p), "--need", "sheet_id"]), 2)
+            self.assertEqual(jak_config.main(["--config", str(p), "--need", "sheet_id", "--optional"]), 3)
+            self.assertEqual(jak_config.main(["--config", str(p), "--need", "remote_ok"]), 0)  # has a default
+
 
 if __name__ == "__main__":
     unittest.main()

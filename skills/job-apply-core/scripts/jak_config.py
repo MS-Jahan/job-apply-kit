@@ -10,6 +10,7 @@ Usage:
   python3 jak_config.py --check          # validate, exit 1 on any required miss
   python3 jak_config.py --show           # resolved config, phone/emails masked
   python3 jak_config.py --get KEY        # print one resolved value
+  python3 jak_config.py --need KEY [--optional]  # gate a task on a key (exit 0/2/3)
   python3 jak_config.py --sync-keys      # add keys missing vs config.example.md (never overwrite)
   python3 jak_config.py --path           # print the config file path in use
 
@@ -256,10 +257,16 @@ def sync_keys(path, example: Path | None = None) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", help="config file (default: $JAK_CONFIG or %s)" % DEFAULT_CONFIG_PATH)
+    ap.add_argument("--optional", action="store_true",
+                    help="with --need: the key is optional (exit 3 instead of 2 when missing)")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--check", action="store_true")
     g.add_argument("--show", action="store_true")
     g.add_argument("--get", metavar="KEY")
+    g.add_argument("--need", metavar="KEY",
+                   help="require KEY for the current task: prints its value (exit 0); "
+                        "exit 2 when a required key is missing (stop and ask the user), "
+                        "exit 3 with --optional (inform once, continue without it)")
     g.add_argument("--sync-keys", action="store_true",
                    help="add keys missing from the config (from config.example.md), never overwrite")
     g.add_argument("--path", action="store_true")
@@ -279,6 +286,17 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(val)
         return 0
+    if a.need:
+        val = cfg.get(a.need)
+        if val:
+            print(val)
+            return 0
+        if a.optional:
+            print(f"OPTIONAL-MISSING {a.need}: not set — inform the user once, then continue without it.")
+            return 3
+        print(f"MISSING {a.need}: required but not set — stop and ask the user for a value "
+              f"(offer to save it with `jak_config.py` update / config edit), do not guess.", file=sys.stderr)
+        return 2
     if a.show:
         for k in sorted(set(cfg.values) | {"workspace", "templates_dir", "cache_dir", "cdp_port", "sheet_tab", "default_doc", "google_backend"}):
             v = cfg.get(k)

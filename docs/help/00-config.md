@@ -10,6 +10,20 @@ file, outside the repo, never committed — it holds phone numbers, emails and
 ids. Script-read values are bullets written exactly as `- **key:** value`;
 lists are comma separated; empty or `<placeholder>` means "not set".
 
+## Required vs optional (the missing-key policy)
+
+Always required: `name`, `name_file`, `email_header`, `email_google`,
+`cv_source`. Apply skills additionally require the tracker (`sheet_id` or
+`sheet_url`) and `drive_folder_id`. Everything else is optional unless a skill
+says otherwise.
+
+Before any skill uses a key, it gates it:
+`python3 skills/job-apply-core/scripts/jak_config.py --need KEY`
+(`--optional` for skippable keys). Required key missing → the agent stops and
+asks ("`X` is missing from your config — give it to me and I'll save it"),
+never guesses. Optional key missing → the agent informs you once and continues
+without it.
+
 ## The config-first rule
 
 Every skill run starts the same way, before any other step:

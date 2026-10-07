@@ -38,6 +38,16 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 
 - Config is one markdown file: `$JAK_CONFIG` or `~/.config/job-apply-kit/config.md`. Load keys through `{{CORE_DIR}}/scripts/jak_config.py` (`--check`, `--show`, `--get KEY`). If a required key is missing, stop and ask; do not guess.
 - Config-first, every run: read this file, then load `config.md`, before any other step. Each skill lists the keys it reads under "Config keys read". The full key reference is `docs/help/00-config.md`.
+- Missing keys: gate every key the task needs through
+  `python3 {{CORE_DIR}}/scripts/jak_config.py --need KEY` (add `--optional` for
+  keys the task can live without) BEFORE using it. Exit 0 = proceed. Exit 2 =
+  required key missing: stop, tell the user which key is missing, ask for the
+  value ("give it to me and I'll save it to your config") — never guess, never
+  continue without it. Exit 3 = optional key missing: inform the user once, then
+  continue the task without it. The always-required keys are `name`,
+  `name_file`, `email_header`, `email_google`, `cv_source`; apply skills additionally
+  require the sheet (`sheet_id` or `sheet_url`) and Drive folder (`drive_folder_id`).
+  Everything else is optional unless the skill says otherwise.
 - Run `doctor.sh` when something external fails (tools, Google backend, debug browser). Tool details live in `docs/EXTERNAL_TOOLS.md`.
 - Runtime data lives in the workspace (`workspace` key): `JDs/` inputs, caches and run state; `output/<company-slug>/` per-job files and evidence; `templates/` the user's templates; `SESSIONS.md` the session log; `.cache/` live-source snapshots.
 

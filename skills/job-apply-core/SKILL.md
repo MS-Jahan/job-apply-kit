@@ -72,7 +72,7 @@ any job, and follow its anchors when a skill references them.
 
 | Script | Use |
 |---|---|
-| `jak_config.py` | `--check`, `--show`, `--get KEY`, `--sync-keys` (add keys missing vs the example) |
+| `jak_config.py` | `--check`, `--show`, `--get KEY`, `--need KEY [--optional]` (missing-key gate), `--sync-keys` (add keys missing vs the example) |
 | `jak_google.py` | the one Google interface: `draft` (never sends), `drive-upload`, `drive-mkdir`, `drive-share-anyone`, `sheet-get`, `sheet-append`, `sheet-create`, `backend`, `accounts`. Backend `gog` or `python`, chosen from config |
 | `sheet_append.py` | append ONE tracker row (15 columns, RAW writes, header check; honors adopted sheet columns) |
 | `sheet_update.py` | `find` a row by company+position, `set` cells on it (Found→Drafted→Staged→Applied; hand-set statuses refuse) |
