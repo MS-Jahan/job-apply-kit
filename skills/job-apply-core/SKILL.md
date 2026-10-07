@@ -30,10 +30,23 @@ When the user asks to set up or update the config from their CV:
    when truncated or JS-gated. Never build a config from a partial read —
    when in doubt, re-read through the browser and say so.
 2. Copy `config.example.md` to the config path if no config exists. Fill `name`, `name_file`, contact fields, links and `cv_source` from the CV. Do not invent values; leave unknowns empty and ask.
-3. For `banned_claims` and `unproven_claims`: ask the user, one skill group at a time ("Have you really used X?"). Never decide for them.
-4. Do not fill Google or sheet ids by hand. Tell the user to run `sheet_init` (it writes them), or ask them for existing ids.
-5. When updating from a newer CV: show a diff of changed keys and ask before overwriting any non-empty value.
-6. Validate:
+3. Ask for the job-application tracker Google Sheet URL in the same conversation
+   (one ask, right after the CV — never finish a config setup without it):
+   - User pastes a sheet URL → save it in config `sheet_url`, then adopt it:
+     `python3 {{CORE_DIR}}/scripts/sheet_init.py --adopt <url>` (matches and saves
+     its columns into `sheet_id`/`sheet_columns`; reports missing/ambiguous headers
+     instead of guessing).
+   - User has no sheet → tell them to create one: run
+     `python3 {{CORE_DIR}}/scripts/sheet_init.py` (creates the Drive folder, the
+     tracker sheet with the 15 standard headers, and writes all ids to config),
+     or have them make a blank sheet, paste its URL into `sheet_url`, and adopt it
+     as above.
+   - Either way, end this step with the sheet reachable from config (`sheet_url`
+     and/or `sheet_id`, plus `sheet_columns` for adopted sheets) — verified by step 7.
+4. For `banned_claims` and `unproven_claims`: ask the user, one skill group at a time ("Have you really used X?"). Never decide for them.
+5. Do not fill other Google or sheet ids by hand. Tell the user to run `sheet_init` (it writes them), or ask them for existing ids.
+6. When updating from a newer CV: show a diff of changed keys and ask before overwriting any non-empty value.
+7. Validate:
    ```bash
    python3 {{CORE_DIR}}/scripts/jak_config.py --check
    python3 {{CORE_DIR}}/scripts/jak_config.py --show

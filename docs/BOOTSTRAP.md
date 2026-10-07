@@ -38,8 +38,9 @@ When the user asks you to set up, fix, or verify their environment:
    allowed), then generate launchers + desktop shortcuts with `--create`.
    Never launch or kill the user's everyday browser yourself — hand them the
    shortcut and let them click it.
-6. **Finish the kit:** `./install.sh` (or `python install.py`), then config,
-   then `sheet_init.py` — see section 4.
+6. **Finish the kit:** `./install.sh` (or `python install.py`), then config —
+   which asks for the CV and the tracker Sheet URL together (adopt or create) —
+   see section 4.
 
 Rules: ask before installing anything system-wide the user did not request;
 prefer user-scope installs (pip `--user`, npm global prefix, portable zips,
@@ -241,8 +242,9 @@ telling the agent "set up my job-apply-kit config from my CV at <file/url>").
 The debug browser (§3 above) must be running BEFORE the config step — CVs
 living in Google Docs can only be read through it (plain web fetch returns a
 truncated page), so the agent routes every CV through
-`cv_fetch.py` first. Then the one-time tracker setup
-(`python3 skills/job-apply-core/scripts/sheet_init.py`), then `/create-template`.
+`cv_fetch.py` first. That same flow then asks for the tracker Sheet URL (adopted via
+`sheet_init.py --adopt`, or created fresh with `sheet_init.py` when the user has none —
+pasted into config `sheet_url`), then `/create-template`.
 
 Later, to pull new kit code and reinstall in one step:
 `python install.py --update` (refuses when the checkout is dirty — rules in

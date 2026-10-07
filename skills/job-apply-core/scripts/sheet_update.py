@@ -36,7 +36,9 @@ def _ctx(tab: str | None):
     import jak_config
     import sheet_append as sa
     cfg = jak_config.load()
-    sheet_id = cfg.require("sheet_id")
+    sheet_id = sa.resolve_sheet_id(cfg)
+    if not sheet_id:
+        raise UpdateError("no tracker sheet configured (paste its URL into config sheet_url, or run sheet_init --adopt)")
     tab = tab or cfg.get("sheet_tab") or "Sheet1"
     return cfg, sa, sheet_id, tab
 

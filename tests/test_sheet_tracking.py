@@ -166,6 +166,25 @@ class SheetIdParseTests(unittest.TestCase):
             "https://docs.google.com/spreadsheets/d/ABC123xyz_-/edit#gid=0"), "ABC123xyz_-")
         self.assertEqual(sheet_init.sheet_id_from("ABC123xyz_-"), "ABC123xyz_-")
 
+    def test_resolve_prefers_id_then_url(self):
+        import jak_config
+        url = "https://docs.google.com/spreadsheets/d/ABC123xyz_-/edit#gid=0"
+        c = jak_config.Config(jak_config.parse(f"## Google\n- **sheet_url:** {url}\n"))
+        self.assertEqual(sheet_append.resolve_sheet_id(c), "ABC123xyz_-")
+        c = jak_config.Config(jak_config.parse("## Google\n- **sheet_id:** REALID123456789012\n"
+                                               f"- **sheet_url:** {url}\n"))
+        self.assertEqual(sheet_append.resolve_sheet_id(c), "REALID123456789012")
+        c = jak_config.Config(jak_config.parse("## Google\n"))
+        self.assertIsNone(sheet_append.resolve_sheet_id(c))
+
+    def test_check_warns_only_when_both_missing(self):
+        import jak_config
+        _, w = jak_config.Config(jak_config.parse("## Google\n")).check()
+        self.assertTrue(any("sheet_id" in x for x in w))
+        url = "https://docs.google.com/spreadsheets/d/ABC123xyz_-/edit"
+        _, w = jak_config.Config(jak_config.parse(f"## Google\n- **sheet_url:** {url}\n")).check()
+        self.assertFalse(any("sheet_id" in x for x in w))
+
 
 class BackendUpdateTests(unittest.TestCase):
     def tearDown(self):

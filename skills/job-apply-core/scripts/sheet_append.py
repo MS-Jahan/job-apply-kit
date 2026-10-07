@@ -115,6 +115,20 @@ def col_letter(n: int) -> str:
     return s
 
 
+def sheet_id_from_url(url: str) -> str | None:
+    """Extract a spreadsheet id from a full Google Sheets URL (None when not one)."""
+    m = re.search(r"/spreadsheets/d/([A-Za-z0-9_-]+)", url or "")
+    return m.group(1) if m else None
+
+
+def resolve_sheet_id(cfg) -> str | None:
+    """Config sheet_id, else the id parsed from config sheet_url (paste-the-URL field)."""
+    sid = (cfg.get("sheet_id") or "").strip()
+    if sid:
+        return sid
+    return sheet_id_from_url(cfg.get("sheet_url") or "")
+
+
 def build_row(obj) -> list[str]:
     if isinstance(obj, list):
         if len(obj) != 15:
@@ -170,7 +184,9 @@ def append(obj, sheet_id: str | None = None, tab: str | None = None, dry_run: bo
     import jak_google as google
     import jak_config
     cfg = jak_config.load()
-    sheet_id = sheet_id or (cfg.get("sheet_id") or "<sheet_id not set>" if dry_run else cfg.require("sheet_id"))
+    sheet_id = sheet_id or resolve_sheet_id(cfg) or ("<sheet_id not set>" if dry_run else None)
+    if not sheet_id:
+        raise RowError("no tracker sheet configured (paste its URL into config sheet_url, or run sheet_init --adopt)")
     tab = tab or cfg.get("sheet_tab") or "Sheet1"
     saved = saved_columns(cfg)
     if dry_run:

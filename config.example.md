@@ -50,10 +50,13 @@ Defaults: workspace = current directory (or `$JAK_WORKSPACE`), templates_dir = `
 - **drive_templates_folder_id:**
 - **sheet_id:**
 - **sheet_tab:** Sheet1
+- **sheet_url:**
 - **sheet_columns:**
 
 `google_backend` is `auto`, `gog` or `python`. The three ids are written by the `sheet_init` script.
-`sheet_columns` is written only by `sheet_init --adopt` (your own sheet's saved header match) — leave it empty for kit-created sheets.
+Paste the tracker link into `sheet_url` (the id is derived from it automatically); `sheet_id` is
+filled by `sheet_init --adopt`, which also saves the sheet's header match into `sheet_columns` —
+leave both empty for kit-created sheets.
 
 ## Browser
 

@@ -175,9 +175,11 @@ class Config:
         for src in self.list("cv_source"):
             if not re.match(r"^https?://", src) and not Path(os.path.expanduser(src)).exists():
                 warnings.append(f"cv_source: local path not found: {src}")
-        for key in ("sheet_id", "drive_folder_id", "gog_account"):
+        for key in ("drive_folder_id", "gog_account"):
             if not self.get(key):
                 warnings.append(f"{key}: not set (run sheet_init or set it for apply skills)")
+        if not self.get("sheet_id") and not self.get("sheet_url"):
+            warnings.append("sheet_id: not set (paste the tracker URL into sheet_url, or run sheet_init --adopt)")
         return errors, warnings
 
 
