@@ -3,12 +3,13 @@
 message extractions into one JSON file.
 
 Usage:
-  python3 scan_channel.py <slug> [--stop-date YYYY-MM-DD] [--max-rounds N]
+  python3 scan_channel.py <slug> [--stop-date YYYY-MM-DD] [--max-rounds N] [--last N]
 
 Run it with the channel open and selected (`agent-browser tab list` shows the selection). It extracts
 the visible messages, scrolls up, merges by message id, and stops when the oldest message is at or
-before --stop-date (default: 7 days ago), when three rounds add nothing, or when there is nothing
-left to scroll. Output: <workspace>/<discord_cache_dir>/<today>/raw_<slug>.json
+before --stop-date (default: 7 days ago), when three rounds add nothing, when there is nothing
+left to scroll, or — with --last N — as soon as N unique messages are collected (bottom-first
+"last N messages" mode; no stop-date needed). Output: <workspace>/<discord_cache_dir>/<today>/raw_<slug>.json
 (discord_cache_dir defaults to JDs/discord).
 """
 from __future__ import annotations
@@ -26,27 +27,9 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                                 "job-apply-core", "scripts"))
 
-EXTRACT = r"""
-(() => JSON.stringify([...document.querySelectorAll('[id^="message-content-"], [data-list-item-id^="chat-messages"]')].map(el => ({
-  id: (el.id.match(/message-content-(\d+)/) || [,''])[1] ||
-      (el.getAttribute('data-list-item-id') || '').split('-').pop(),
-  author: el.querySelector('h3, [class*="header"] [class*="name"]')?.innerText || '',
-  time: el.querySelector('time')?.getAttribute('datetime') || '',
-  text: el.innerText,
-  links: [...el.querySelectorAll('a')].map(a => a.href)
-})).filter(m => m.id)))()
-"""
+EXTRACT = r'''(() => { const ch = (location.pathname.split('/').pop() || ''); const out = []; document.querySelectorAll('[id^="message-content-"], [data-list-item-id^="chat-messages-' + ch + '-"]').forEach(el => { let id = (el.id.match(/message-content-(\d+)/) || ['',''])[1]; if (!id || !/^\d+$/.test(id)) { const p = (el.getAttribute('data-list-item-id') || '').split('-'); id = /^\d+$/.test(p[p.length-1]) ? p[p.length-1] : ''; } if (id && /^\d+$/.test(id)) { const h = el.querySelector('h3'); const t = el.querySelector('time'); out.push({ id: id, author: h ? h.innerText.split('\n')[0] : '', time: t ? (t.getAttribute('datetime') || '') : '', text: el.innerText, links: [...el.querySelectorAll('a')].map(a => a.href) }); } }); return JSON.stringify(out); })()'''
 
-SCROLL = """
-(() => {
-  const scrollers = [...document.querySelectorAll('div[class*="scroller"]')]
-    .filter(el => el.scrollHeight > el.clientHeight + 50);
-  if (!scrollers.length) return 'none';
-  const s = scrollers.sort((a,b) => b.scrollHeight - a.scrollHeight)[0];
-  s.scrollTop = Math.max(0, s.scrollTop - s.clientHeight * 1.6);
-  return String(s.scrollTop);
-})()
-"""
+SCROLL = r'''(() => { const chat = document.querySelector('[class*="chatContent"]'); if (!chat) return 'none'; const scrollers = [...chat.querySelectorAll('div[class*="scroller"]')].filter(el => el.scrollHeight > el.clientHeight + 50); if (!scrollers.length) return 'none'; const s = scrollers.sort((a,b) => b.scrollHeight - a.scrollHeight)[0]; s.scrollTop = Math.max(0, s.scrollTop - s.clientHeight * 1.5); return String(s.scrollTop); })()'''
 
 
 def agent_browser() -> str:
@@ -59,6 +42,8 @@ def agent_browser() -> str:
 
 def ab(args: list[str], timeout: int = 60) -> str:
     r = subprocess.run([agent_browser()] + args, capture_output=True, text=True, timeout=timeout)
+    if r.returncode != 0:
+        sys.stderr.write(f"agent-browser {args[0]} failed (rc={r.returncode}): {(r.stderr or r.stdout or '').strip()[:200]}\n")
     return r.stdout.strip()
 
 
@@ -105,9 +90,17 @@ def main(argv=None) -> int:
     ap.add_argument("slug")
     ap.add_argument("--stop-date", default=(datetime.date.today() - datetime.timedelta(days=7)).isoformat())
     ap.add_argument("--max-rounds", type=int, default=25)
+    ap.add_argument("--last", type=int, default=0,
+                    help="stop once N unique messages are collected (bottom-first last-N mode)")
+    ap.add_argument("--tab", default="",
+                    help="stable tab ref (t<N>, label or CDP target) to select before extracting")
     a = ap.parse_args(argv)
+    if a.tab:
+        ab(["tab", a.tab])
+        time.sleep(1)
     merged: dict = {}
     stale = 0
+    none_streak = 0
     for i in range(a.max_rounds):
         msgs = extract()
         new = 0
@@ -115,15 +108,22 @@ def main(argv=None) -> int:
             if m["id"] not in merged:
                 merged[m["id"]] = m
                 new += 1
+        if a.last and len(merged) >= a.last:
+            break
         oldest = oldest_date(merged)
         print(f"  round {i + 1}: +{new} total={len(merged)} oldest={oldest}", flush=True)
-        if oldest and oldest <= a.stop_date:
+        if not a.last and oldest and oldest <= a.stop_date:
             break
         stale = stale + 1 if new == 0 else 0
         if stale >= 3:
             break
         if ab(["eval", SCROLL]) == "none":
-            break
+            # Discord collapses the chat scroller while fetching history; retry a few times.
+            none_streak += 1
+            if none_streak >= 3:
+                break
+        else:
+            none_streak = 0
         time.sleep(1.8)
     data = sorted(merged.values(), key=lambda m: m.get("time", ""))
     path = out_dir() / f"raw_{a.slug}.json"
