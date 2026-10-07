@@ -13,6 +13,8 @@
   --list                              list available skills
   --no-mcp                            skip MCP registration
   --setup-mcp-only                    only register MCP servers (no skill install)
+  --update                            git pull --ff-only first, then install (refuses when
+                                      the checkout is dirty; see "Updating the kit" in README.md)
 
 MCP registration (mcp/servers.json is the single source of truth for the server
 definitions; install.py only renders {{CDP_PORT}} into it and never hardcodes
@@ -367,6 +369,53 @@ def _run(cmd: list[str]) -> int:
         return 1
 
 
+def git_status(repo: Path) -> tuple[bool, list[str]]:
+    """(is_git_checkout, dirty_paths). Never mutates anything."""
+    import subprocess
+    try:
+        p = subprocess.run(["git", "-C", str(repo), "status", "--porcelain"],
+                           capture_output=True, text=True, timeout=30)
+    except Exception:  # noqa: BLE001
+        return False, []
+    if p.returncode != 0:
+        return False, []
+    return True, [l for l in p.stdout.splitlines() if l.strip()]
+
+
+def git_update(dry: bool) -> int:
+    """Pull latest kit code without clobbering local edits. Returns exit code."""
+    import subprocess
+    is_repo, dirty = git_status(REPO)
+    if not is_repo:
+        print("not a git checkout: update by downloading a fresh copy, or run plain ./install.sh")
+        return 1
+    if dirty:
+        print("refusing to pull: this checkout has local changes:")
+        for line in dirty[:20]:
+            print(f"  {line}")
+        if len(dirty) > 20:
+            print(f"  ... and {len(dirty) - 20} more")
+        print("Rules: never edit kit files in place. Personal data already lives outside")
+        print("the repo (config.md, workspace templates/JDs). To update: commit your work,")
+        print("move it out, or `git stash`, then re-run --update.")
+        return 1
+    print("git pull --ff-only")
+    if dry:
+        return 0
+    try:
+        p = subprocess.run(["git", "-C", str(REPO), "pull", "--ff-only"],
+                           capture_output=True, text=True, timeout=120)
+    except Exception as e:  # noqa: BLE001
+        print(f"pull failed to start: {e}")
+        return 1
+    if p.returncode != 0:
+        print((p.stdout + p.stderr).strip())
+        print("pull failed (diverged branches?). Rebase or merge by hand, then run ./install.sh")
+        return 1
+    print((p.stdout.strip() or "already up to date."))
+    return 0
+
+
 def setup_mcp(dry: bool) -> None:
     servers = mcp_servers(cdp_port())
     if not servers:
@@ -406,15 +455,22 @@ def main(argv=None) -> int:
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--no-mcp", action="store_true")
     ap.add_argument("--setup-mcp-only", action="store_true")
+    ap.add_argument("--update", action="store_true")
     a = ap.parse_args(argv)
 
     if a.list:
         for n in available():
             print(n + ("  (requires: " + ", ".join(requires(n)) + ")" if requires(n) else ""))
         return 0
+    if a.update and (a.uninstall or a.dest):
+        raise SystemExit("--update cannot be combined with --uninstall or --dest")
     if a.setup_mcp_only:
         setup_mcp(a.dry_run)
         return 0
+    if a.update:
+        rc = git_update(a.dry_run)
+        if rc != 0:
+            return rc
     dest = Path(os.path.expanduser(a.dest or TARGETS[a.target]))
     manifest = load_manifest()
     if a.uninstall:

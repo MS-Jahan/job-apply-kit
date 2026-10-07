@@ -51,6 +51,27 @@ Install only what you need: `./install.sh make-resume` pulls in just the resume-
 to see every skill and its dependencies, `--uninstall` to remove what you installed, `--link` for a
 symlinked dev setup that stays in sync with this checkout.
 
+## Updating the kit
+
+One command, run inside this checkout:
+
+```bash
+./install.sh --update        # or: python install.py --update
+```
+
+It runs `git pull --ff-only` and then reinstalls every skill + MCP entry from
+the fresh code. Three rules make this conflict-free:
+
+1. **Never edit kit files in place.** Installed skills under
+   `~/.claude/skills` (or the OpenCode/agents equivalents) are generated
+   copies — reinstalling overwrites them, by design. Propose changes via a
+   branch/PR instead.
+2. **Personal data already lives outside the repo** (config file, workspace
+   templates, `JDs/`, tracker) — pulling can never touch it.
+3. **If the checkout is dirty, `--update` refuses** and lists the changed
+   files. Commit your work, move it out, or `git stash`, then re-run. It never
+  force-pulls over your edits. `--dry-run` previews the pull without running it.
+
 ## Configure
 
 Everything personal lives in one file, outside this repository: `~/.config/job-apply-kit/config.md`

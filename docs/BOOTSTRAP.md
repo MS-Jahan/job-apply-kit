@@ -15,8 +15,10 @@ When the user asks you to set up, fix, or verify their environment:
    `python doctor.py --mode all` (on Windows use `py -3`; the `.sh` wrappers
    need Git Bash or WSL). Work through each `MISSING` line top to bottom.
 3. **For each missing tool, in this order:**
-   a. Use the OS package manager command from section 2 (winget/choco on
-      Windows, Homebrew on macOS, apt/dnf on Linux).
+   a. Use the OS package manager command from section 2. On Windows 11,
+      `winget` is built in — always try it first; reach for
+      choco/scoop/conda only when winget has no package. On macOS use
+      Homebrew, on Linux the distro manager (apt/dnf/pacman).
    b. If no package exists, download from the **official source URL** in
       section 2 — never from a random blog, mirror, or video description.
    c. If the URL or command no longer works (projects move), run a web search
@@ -37,8 +39,32 @@ When the user asks you to set up, fix, or verify their environment:
    then `sheet_init.py` — see section 4.
 
 Rules: ask before installing anything system-wide the user did not request;
-prefer user-scope installs (pip `--user`, npm global prefix, portable zips).
-If an install needs admin rights or a reboot, say so instead of pushing ahead.
+prefer user-scope installs (pip `--user`, npm global prefix, portable zips,
+winget user-scope packages). If an install needs admin rights or a reboot,
+say so instead of pushing ahead.
+
+### 0.1 Elevation (UAC) on Windows — what the agent needs to know
+
+Windows has no always-on `sudo`. Elevation happens through a UAC consent
+prompt: a command that needs admin rights either pops the prompt by itself
+(machine-scope installers do this automatically) or fails with "access
+denied". The agent **cannot click that prompt** — so:
+
+- Default to installs that never elevate: `winget` user-scope packages,
+  `scoop`, portable zips, `pip`/`npm -g` (both user-local), and anything under
+  `%USERPROFILE%`. Avoid Chocolatey when winget/scoop cover the package —
+  Chocolatey installs machine-wide and always needs elevation.
+- Windows 11 ships a real `sudo.exe`, but it must first be enabled in
+  Settings > System > For developers, and each use still shows a UAC prompt.
+  Treat it as a user-side tool, not an agent tool.
+- If a command fails with access denied, stop and tell the user exactly what
+  to do: right-click Windows Terminal > Run as administrator, re-run the one
+  command, then close that window. Never ask the user to turn UAC off.
+- For this project specifically, nothing requires admin: Python/Node
+  (user PATH), `pip`/`npm -g`, tectonic (zip into `%USERPROFILE%\.local\bin`),
+  poppler/pandoc (winget user scope), `gog` (single binary), browsers
+  (per-user install), launchers/shortcuts (repo dir + Desktop), and all kit
+  scripts. Verified unelevated on the author's machine.
 
 ## 1. Detect the OS
 
@@ -191,6 +217,10 @@ Then the personal config (`config.example.md` is the template; easiest is
 telling the agent "set up my job-apply-kit config from my CV at <file/url>"),
 then the one-time tracker setup
 (`python3 skills/job-apply-core/scripts/sheet_init.py`), then `/create-template`.
+
+Later, to pull new kit code and reinstall in one step:
+`python install.py --update` (refuses when the checkout is dirty — rules in
+the README "Updating the kit" section).
 
 ## 5. When the internet moves on
 

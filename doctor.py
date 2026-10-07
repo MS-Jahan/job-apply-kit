@@ -12,6 +12,7 @@ import argparse
 import importlib.util
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -54,15 +55,21 @@ def check_python() -> None:
 
 
 def check_latex() -> None:
+    win = platform.system() == "Windows"
     t = which("tectonic")
     if t:
         add("OK", "tectonic", t)
     elif which("pdflatex"):
-        add("WARN", "tectonic missing, pdflatex found (fallback)", "install tectonic: https://tectonic-typesetting.github.io")
+        add("WARN", "tectonic missing, pdflatex found (fallback)", "winget install --id tectonic.tectonic -e" if win else "install tectonic: https://tectonic-typesetting.github.io")
     else:
-        add("MISSING", "tectonic (or pdflatex)", "install tectonic: https://tectonic-typesetting.github.io")
-    add("OK" if which("pdfinfo") else "MISSING", "pdfinfo (poppler-utils)", "" if which("pdfinfo") else "apt install poppler-utils | brew install poppler | conda install poppler (see docs/BOOTSTRAP.md 2.3)")
-    add("OK" if which("pandoc") else "WARN", "pandoc (optional, Markdown to DOCX/PDF)", "" if which("pandoc") else "see docs/BOOTSTRAP.md 2.3 or https://pandoc.org/installing.html")
+        add("MISSING", "tectonic (or pdflatex)", "winget install --id tectonic.tectonic -e" if win else "install tectonic: https://tectonic-typesetting.github.io")
+    if which("pdfinfo"):
+        add("OK", "pdfinfo (poppler-utils)", "")
+    elif win:
+        add("MISSING", "pdfinfo (poppler-utils)", "winget install --id oschwartz10612.Poppler -e  (or scoop/conda; see docs/BOOTSTRAP.md 2.3)")
+    else:
+        add("MISSING", "pdfinfo (poppler-utils)", "apt install poppler-utils | brew install poppler")
+    add("OK" if which("pandoc") else "WARN", "pandoc (optional, Markdown to DOCX/PDF)", "" if which("pandoc") else "winget install --exact --id JohnMacFarlane.Pandoc" if win else "see docs/BOOTSTRAP.md 2.3 or https://pandoc.org/installing.html")
 
 
 def check_config(cfg_path: str | None):
@@ -127,16 +134,18 @@ def check_google(cfg) -> None:
 
 
 def check_browser(cfg) -> None:
+    win = platform.system() == "Windows"
     node = which("node")
+    node_hint = "winget install OpenJS.NodeJS.LTS (see docs/BOOTSTRAP.md 2.2)" if win else "install Node 18+ (see docs/BOOTSTRAP.md 2.2)"
     if node:
         code, out = run([node, "-v"])
         try:
             major = int(out.lstrip("v").split(".")[0])
         except ValueError:
             major = 0
-        add("OK" if major >= 18 else "MISSING", f"Node {out}", "" if major >= 18 else "install Node 18+ (see docs/BOOTSTRAP.md)")
+        add("OK" if major >= 18 else "MISSING", f"Node {out}", "" if major >= 18 else node_hint)
     else:
-        add("MISSING", "Node", "install Node 18+ (see docs/BOOTSTRAP.md)")
+        add("MISSING", "Node", node_hint)
     ab = which("agent-browser")
     add("OK" if ab else "MISSING", "agent-browser", ab or "npm install -g agent-browser@latest  (and put ~/.npm-global/bin on PATH)")
     try:
