@@ -192,14 +192,18 @@ python3 skills/job-apply-core/scripts/browser_setup.py --browser chrome,brave --
 This writes one launcher per browser into the kit directory
 (`browser-debug-chrome.bat` on Windows, `browser-debug-chrome.sh` on
 Linux/macOS — port defaults to config `cdp_port`, override with `--port`),
-each starting its browser with `--remote-debugging-port` and a dedicated
-persistent profile (`jak-browser-<name>`, so logins survive restarts), plus a
-double-clickable shortcut for each on the desktop
+each starting its browser with `--remote-debugging-port` on the user's
+EXISTING default profile (no `--user-data-dir`, no fresh profile, no second
+login), plus a double-clickable shortcut for each on the desktop
 (`JAK <label> (debug).lnk` / `.desktop` / `.command`).
 `--dry-run` previews, `--no-shortcuts` skips the desktop links,
-`--desktop-dir` / `--out-dir` relocate the outputs.
+`--desktop-dir` / `--out-dir` relocate the outputs. Only when the user
+explicitly asks for a separate profile, regenerate with `--profile <dir>`
+(or `--isolated` for the legacy `jak-browser-<name>` dir) — the agent edits
+the launcher/shortcut, never the user.
 
-The user clicks the shortcut, logs into their sites once, and leaves the
+The user closes normal browser windows first, clicks the shortcut (it opens
+with the existing default profile, already logged in), and leaves the
 browser running. The agent verifies with
 `curl http://127.0.0.1:9222/json/version` (Windows: `curl.exe`) and
 `agent-browser connect 9222 && agent-browser tab list`.

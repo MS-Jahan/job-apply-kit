@@ -53,7 +53,15 @@ class BrowserSetupTests(unittest.TestCase):
         )
         self.assertIsNone(browser_setup.suggest([]))
 
-    def test_launcher_content_has_binary_port_profile(self):
+    def test_launcher_default_uses_existing_profile(self):
+        text = browser_setup.render_launcher("chrome", "/fake/chrome", 9223, None)
+        self.assertIn("/fake/chrome", text)
+        self.assertIn("9223", text)
+        self.assertIn("--remote-debugging-port", text)
+        self.assertNotIn("--user-data-dir", text)
+        self.assertNotIn("JAK_PROFILE", text)
+
+    def test_launcher_explicit_profile_adds_user_data_dir(self):
         text = browser_setup.render_launcher("chrome", "/fake/chrome", 9223, "/fake/profile")
         self.assertIn("/fake/chrome", text)
         self.assertIn("9223", text)
@@ -94,6 +102,42 @@ class BrowserSetupTests(unittest.TestCase):
                            capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertEqual(len(list(out.glob("browser-debug-*"))), 1)
+
+    def test_create_default_has_no_user_data_dir(self):
+        env = fake_env(self.t, "chrome")
+        out, desk = self.t / "launch", self.t / "desk"
+        r = subprocess.run([sys.executable, SCRIPT, "--browser", "chrome", "--create",
+                            "--out-dir", str(out), "--desktop-dir", str(desk)],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        text = next(out.glob("browser-debug-*")).read_text(encoding="utf-8")
+        self.assertIn("--remote-debugging-port", text)
+        self.assertNotIn("--user-data-dir", text)
+        self.assertIn("already logged in", r.stdout)
+
+    def test_create_isolated_and_explicit_profile(self):
+        env = fake_env(self.t, "chrome")
+        out, desk = self.t / "launch", self.t / "desk"
+        r = subprocess.run([sys.executable, SCRIPT, "--browser", "chrome", "--create",
+                            "--out-dir", str(out), "--desktop-dir", str(desk),
+                            "--isolated", "--profile-base", str(self.t / "prof")],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        self.assertIn("--user-data-dir", next(out.glob("browser-debug-*")).read_text(encoding="utf-8"))
+        out2, desk2 = self.t / "launch2", self.t / "desk2"
+        r = subprocess.run([sys.executable, SCRIPT, "--browser", "chrome", "--create",
+                            "--out-dir", str(out2), "--desktop-dir", str(desk2),
+                            "--profile", str(self.t / "custom")],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        text = next(out2.glob("browser-debug-*")).read_text(encoding="utf-8")
+        self.assertIn("--user-data-dir", text)
+        self.assertIn("custom", text)
+        r = subprocess.run([sys.executable, SCRIPT, "--browser", "chrome", "--create",
+                            "--out-dir", str(out2), "--desktop-dir", str(desk2),
+                            "--profile", str(self.t / "custom"), "--isolated"],
+                           capture_output=True, text=True, env=env)
+        self.assertNotEqual(r.returncode, 0)
 
     def test_unknown_browser_rejected(self):
         env = fake_env(self.t, "chrome")

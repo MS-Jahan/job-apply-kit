@@ -33,8 +33,12 @@ python3 skills/job-apply-core/scripts/browser_setup.py --browser chrome --create
 
 That writes one launcher per browser into the kit directory
 (`browser-debug-<name>.bat` on Windows, `.sh` elsewhere) plus a
-double-clickable desktop shortcut each (`JAK <label> (debug)`). Click the
-shortcut, log into your sites once in that profile, leave it running. Verify:
+double-clickable desktop shortcut each (`JAK <label> (debug)`). The launcher
+reuses the browser's existing default profile — no fresh profile, no second
+login. Close normal browser windows first, click the shortcut, leave it
+running. Only when the user explicitly asks for a separate profile, regenerate
+with `--profile <dir>` (or `--isolated`) — the agent edits the launcher or
+shortcut, never the user. Verify:
 
 ```bash
 curl http://127.0.0.1:9222/json/version
@@ -42,21 +46,26 @@ agent-browser connect 9222 && agent-browser tab list   # your real tabs = attach
 ```
 
 Flags: `--browser all` or `--browser chrome,brave`, `--port` (default: config
-`cdp_port`), `--dry-run` to preview, `--no-shortcuts` for launchers only.
+`cdp_port`), `--profile <dir>` / `--isolated` for a separate profile only when
+the user asks, `--dry-run` to preview, `--no-shortcuts` for launchers only.
 Full agent runbook: `docs/BOOTSTRAP.md` §3.
 
 ## Step 1b — manual start (fallback)
 
 If you prefer typing the command yourself (this is exactly what the generated
-launchers do):
+launchers do — default profile, already logged in; close normal browser
+windows first so the flag takes effect on the default profile):
 
 | OS | Example |
 |---|---|
-| Linux | `google-chrome --remote-debugging-port=9222 --user-data-dir=$HOME/.config/jak-browser` |
-| macOS | `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir="$HOME/.config/jak-browser"` |
-| Windows | `"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%USERPROFILE%\jak-browser"` |
+| Linux | `google-chrome --remote-debugging-port=9222` |
+| macOS | `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222` |
+| Windows | `"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222` |
 
-Use a persistent profile directory (not a temp dir) so logins survive restarts. The macOS/Windows
+Only when the user asks for a separate profile, append
+`--user-data-dir=<persistent-dir>` (not a temp dir, so logins survive
+restarts): e.g. `$HOME/.config/jak-browser` on Linux,
+`"%USERPROFILE%\jak-browser"` on Windows. The macOS/Windows
 commands are untested by the kit's author — if attach fails, first check the port is listening:
 `curl http://127.0.0.1:9222/json/version`. On Windows, close Chrome before reusing a named profile if
 files are locked. Running the agent inside WSL2 while Chrome runs on Windows works: from WSL2,

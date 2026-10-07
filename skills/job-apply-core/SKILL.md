@@ -44,7 +44,7 @@ any job, and follow its anchors when a skill references them.
 | `sheet_init.py` | one-time: create Drive folder, templates subfolder and tracker sheet; writes ids to config |
 | `gmail_draft.py` | draft with attachments (wrapper over `jak_google.py draft`) |
 | `google_setup.py` | python-backend OAuth: `--account`, `--client-secret`, `--auth-url`, `--auth-code`, `--import-token`, `--check` |
-| `browser_setup.py` | detect Chromium browsers (`--list`), generate debug-mode launchers + desktop shortcuts (`--browser chrome,brave --create`) |
+| `browser_setup.py` | detect Chromium browsers (`--list`), generate default-profile debug launchers + desktop shortcuts (`--browser chrome,brave --create`; `--profile`/`--isolated` only for opt-in separate profiles) |
 | `tool_paths.py` | record tool binary paths to tools.json (`--record`), add user-local bin dirs to the user PATH without admin (`--ensure-path`) |
 | `google_api.py` | general Google tool for agents: gmail search/get/labels, calendar, drive, contacts, sheets, docs (no mail send) |
 | `cdp.py`, `picker_upload.py` | raw CDP driver and Google Picker upload (last resort browser tools) |

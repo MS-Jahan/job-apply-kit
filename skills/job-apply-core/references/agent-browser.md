@@ -33,7 +33,8 @@ npm install -g agent-browser@latest   # update
   ss -tlnp | grep <cdp_port>
   ps -o pid,comm,args -p <BROWSER_PID>
   ```
-- The user's browser (for example `google-chrome --remote-debugging-port=9222 --user-data-dir=...`)
+- The user's debug browser (for example `chrome --remote-debugging-port=9222` on
+  their default profile, already logged in)
   must never receive `kill`, `pkill`, or `agent-browser close --all`.
 - `close --all` and `pkill -f agent-browser-chrome-` are only safe against
   agent-owned Chromium (`--user-data-dir=/tmp/agent-browser-chrome-*`,

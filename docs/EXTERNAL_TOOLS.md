@@ -245,25 +245,28 @@ python3 skills/job-apply-core/scripts/browser_setup.py --browser chrome --create
 `--create` writes one launcher per chosen browser into the kit directory
 (`browser-debug-<name>.bat` on Windows, `.sh` elsewhere; `--port` overrides
 the config `cdp_port`) plus a double-clickable desktop shortcut per browser.
-The user clicks the shortcut, logs into LinkedIn/Facebook/Discord/BDJobs/Google
-once in that profile, and leaves it running. Several browsers may be selected
+Launchers reuse the existing default profile (no fresh profile, no second
+login): the user closes normal browser windows first, clicks the shortcut,
+and leaves it running. `--profile <dir>` / `--isolated` create a separate
+profile only when the user explicitly asks. Several browsers may be selected
 (`--browser chrome,brave` or `--browser all`). Details and flags:
 `docs/help/03-browser-setup.md`, `docs/BOOTSTRAP.md` §3.
 
 Manual fallback (the launchers do exactly this). The kit never launches or
-manages your browser. Start your own with remote debugging enabled, log in
-to LinkedIn/Facebook/Discord/BDJobs/Google once in that profile, and leave it running.
+manages your browser. Close normal browser windows first, start your own with
+remote debugging enabled on your default profile (already logged in), and leave it running.
 
 | OS | Example |
 |---|---|
-| Linux | `google-chrome --remote-debugging-port=9222 --user-data-dir=$HOME/.config/jak-browser` (swap the binary for Chromium/Brave) |
-| macOS | `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir="$HOME/.config/jak-browser"` |
-| Windows | `"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%USERPROFILE%\jak-browser"` |
+| Linux | `google-chrome --remote-debugging-port=9222` (swap the binary for Chromium/Brave) |
+| macOS | `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222` |
+| Windows | `"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222` |
 
-Use `cdp_port` from your config (default 9222). Chrome requires a non-default `--user-data-dir` when
-the debugging port is enabled, for your own security — use a persistent directory (not `/tmp`) so
-logins survive restarts. Some Chromium-family browsers work without a dedicated profile; if attach
-fails, add one. Raw-CDP scripts may also need `--remote-allow-origins=*` on older/stricter builds;
+Use `cdp_port` from your config (default 9222). Only when the user asks for a
+separate profile, append `--user-data-dir=<persistent-dir>` (not `/tmp`) so
+logins survive restarts. If attach fails after reusing a running profile,
+close the browser fully first — a launch flag cannot enable debugging on an
+already-running instance that was started without it. Raw-CDP scripts may also need `--remote-allow-origins=*` on older/stricter builds;
 `cdp.py` already suppresses the Origin header, which works around this in most cases.
 
 The macOS and Windows commands above are from upstream documentation and have not been tested by the
