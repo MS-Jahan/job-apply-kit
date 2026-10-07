@@ -43,11 +43,16 @@ then login-walled items (record and stop; leave the tab open).
      `picker_upload.py`), STOP at Submit, screenshot.
    - **Easy Apply (LinkedIn):** fill, upload, STOP at the review step, screenshot. Never complete it.
    - Evidence screenshot goes to `output/<company-slug>/`.
-6. **Track:** append ONE row with `python3 {{CORE_DIR}}/scripts/sheet_append.py append '<json-row>'`
+6. **Track (find → add now):** append ONE row with `status: Found` via
+   `python3 {{CORE_DIR}}/scripts/sheet_append.py append '<json-row>'`
    (keys and column contract in `tracker-columns.md`; never hand-roll an append). Resume Drive column:
    `[template] <link>` for template documents, links comma-separated if CV + resume + cover letter. Put the full job
-   text in `job_desc` (column I) and the source id in `comments` (column O: post url, message id, image path, draft id).
-7. **Update both caches** (`seen_*.json` verdict plus `sheet_row`, `output_dir`, `processed_at`; `applied_cache.json`).
+   text in `job_desc` (column I) and the source id in `comments` (column O: post url, message id, image path).
+7. **Track (draft/stage → update the SAME row):** after the draft exists or the form is
+   staged, `python3 {{CORE_DIR}}/scripts/sheet_update.py set ROW '{"status":"Drafted","comments":"draft r_123"}'`
+   (locate ROW first with `sheet_update.py find --company X --position Y`). Status moves
+   Found → Drafted → Staged → Applied; never a second row for the same job.
+8. **Update both caches** (`seen_*.json` verdict plus `sheet_row`, `output_dir`, `processed_at`; `applied_cache.json`).
 
 ## 3. Report (every run)
 

@@ -50,8 +50,10 @@ Defaults: workspace = current directory (or `$JAK_WORKSPACE`), templates_dir = `
 - **drive_templates_folder_id:**
 - **sheet_id:**
 - **sheet_tab:** Sheet1
+- **sheet_columns:**
 
 `google_backend` is `auto`, `gog` or `python`. The three ids are written by the `sheet_init` script.
+`sheet_columns` is written only by `sheet_init --adopt` (your own sheet's saved header match) — leave it empty for kit-created sheets.
 
 ## Browser
 

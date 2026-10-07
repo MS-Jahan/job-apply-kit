@@ -54,9 +54,10 @@ any job, and follow its anchors when a skill references them.
 |---|---|
 | `jak_config.py` | `--check`, `--show`, `--get KEY` |
 | `jak_google.py` | the one Google interface: `draft` (never sends), `drive-upload`, `drive-mkdir`, `drive-share-anyone`, `sheet-get`, `sheet-append`, `sheet-create`, `backend`, `accounts`. Backend `gog` or `python`, chosen from config |
-| `sheet_append.py` | append ONE tracker row (15 columns, RAW writes, header check) |
+| `sheet_append.py` | append ONE tracker row (15 columns, RAW writes, header check; honors adopted sheet columns) |
+| `sheet_update.py` | `find` a row by company+position, `set` cells on it (Found→Drafted→Staged→Applied; hand-set statuses refuse) |
 | `sheet_snapshot.py` | read-only tracker snapshot into `JDs/tracker/` |
-| `sheet_init.py` | one-time: create Drive folder, templates subfolder and tracker sheet; writes ids to config |
+| `sheet_init.py` | one-time: create Drive folder, templates subfolder and tracker sheet; writes ids to config (`--adopt` keeps your own sheet) |
 | `gmail_draft.py` | draft with attachments (wrapper over `jak_google.py draft`) |
 | `google_setup.py` | python-backend OAuth: `--account`, `--client-secret`, `--auth-url`, `--auth-code`, `--import-token`, `--check` |
 | `browser_setup.py` | detect Chromium browsers (`--list`), generate default-profile debug launchers + desktop shortcuts (`--browser chrome,brave --create`; `--profile`/`--isolated` only for opt-in separate profiles), pre-launch running check + guarded start (`--check-running`, `--launch`) |

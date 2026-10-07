@@ -24,6 +24,7 @@ CLI (JSON on stdout, errors on stderr, exit 1):
   jak_google.py sheet-create TITLE
   jak_google.py sheet-get SHEET_ID RANGE
   jak_google.py sheet-append SHEET_ID RANGE --values-json '[[...]]'          (sheet_append.py guards the 15 columns)
+  jak_google.py sheet-update SHEET_ID RANGE --values-json '[[...]]'          (sheet_update.py guards keys + statuses)
 """
 from __future__ import annotations
 
@@ -143,6 +144,11 @@ class GogBackend:
                        "--input", "RAW", "--insert", "INSERT_ROWS"])
         return {"range": r.get("updatedRange", "")}
 
+    def sheet_update(self, sheet_id, rng, rows):
+        r = self._run(["sheets", "update", sheet_id, rng, "--values-json", json.dumps(rows),
+                       "--input", "RAW"])
+        return {"range": r.get("updatedRange", rng)}
+
     # test/cleanup helpers (the kit itself never deletes)
     def _delete_file(self, file_id):
         self._run(["drive", "delete", file_id, "--permanent", "--force"])
@@ -218,6 +224,12 @@ class PythonBackend:
             spreadsheetId=sheet_id, range=rng, valueInputOption="RAW", insertDataOption="INSERT_ROWS",
             body={"values": rows}).execute()
         return {"range": r.get("updates", {}).get("updatedRange", "")}
+
+    def sheet_update(self, sheet_id, rng, rows):
+        r = self._svc("sheets", "v4").spreadsheets().values().update(
+            spreadsheetId=sheet_id, range=rng, valueInputOption="RAW",
+            body={"values": rows}).execute()
+        return {"range": r.get("updatedRange", rng)}
 
     def _delete_file(self, file_id):
         self._svc("drive", "v3").files().delete(fileId=file_id).execute()
@@ -301,6 +313,14 @@ def sheet_append(sheet_id, rng, rows, **kw):
     return backend(**kw).sheet_append(sheet_id, rng, rows)
 
 
+def sheet_update(sheet_id, rng, rows, **kw):
+    """Overwrite cells in rng (single cells or a block). RAW input, like append."""
+    if not (isinstance(rows, list) and rows and all(isinstance(r, list) for r in rows)):
+        raise GoogleError("rows must be a JSON array of arrays")
+    rows = [[str(c) if c is not None else "" for c in r] for r in rows]
+    return backend(**kw).sheet_update(sheet_id, rng, rows)
+
+
 # --------------------------------------------------------------------------- CLI
 
 def main(argv=None) -> int:
@@ -338,6 +358,10 @@ def main(argv=None) -> int:
     p.add_argument("sheet_id")
     p.add_argument("range")
     p.add_argument("--values-json", required=True)
+    p = sub.add_parser("sheet-update")
+    p.add_argument("sheet_id")
+    p.add_argument("range")
+    p.add_argument("--values-json", required=True)
     a = ap.parse_args(argv)
     kw = {k: v for k, v in (("name", a.backend if a.backend and a.backend != "auto" else None), ("account", a.account)) if v}
     try:
@@ -359,6 +383,8 @@ def main(argv=None) -> int:
             out = sheet_create(a.title, **kw)
         elif a.cmd == "sheet-get":
             out = sheet_get(a.sheet_id, a.range, **kw)
+        elif a.cmd == "sheet-update":
+            out = sheet_update(a.sheet_id, a.range, json.loads(a.values_json), **kw)
         else:
             out = sheet_append(a.sheet_id, a.range, json.loads(a.values_json), **kw)
     except (GoogleError, json.JSONDecodeError) as e:

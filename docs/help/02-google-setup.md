@@ -22,7 +22,10 @@ keyring).
 
 To get your own OAuth credentials for either backend, create a Google Cloud project, enable the Gmail,
 Drive and Sheets APIs, and download an OAuth client-secret JSON (type: Desktop app). The secret file
-itself is never committed and never stored in this repo.
+itself is never committed and never stored in this repo. The exact click path — project create/select,
+the three library links, consent screen in testing mode with yourself as test user, Desktop client,
+download, and where the file goes — is [02b-cloud-console](02-cloud-console.md), written so an agent
+can drive it in the debug browser for the user.
 
 ## Option B — bundled Python backend (fallback)
 

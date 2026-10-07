@@ -23,7 +23,7 @@ for your path. On native Windows, run the Python entry points directly (`python 
 | Module | Page | Skills involved |
 |---|---|---|
 | Prerequisites (Python, Node, accounts) | [01-prerequisites](01-prerequisites.md) | all |
-| Google auth + Gmail/Drive/Sheets backend | [02-google-setup](02-google-setup.md) | every apply skill, via `job-apply-core` |
+| Google auth + Gmail/Drive/Sheets backend | [02-google-setup](02-google-setup.md) ([Cloud Console walkthrough](02-cloud-console.md)) | every apply skill, via `job-apply-core` |
 | Debug browser + agent-browser + MCP fallback | [03-browser-setup](03-browser-setup.md) | every search/apply skill |
 | Job searching (BDJobs, LinkedIn, saved lists, screenshots) | [04-job-search](04-job-search.md) | `bdjobs-full-run`, `li-full-run`, `linkedin-job-search`, `check-li-saved`, `check-fb-saved`, `check-discord-jobs`, `check-image-batch` |
 | PDF generation (tectonic, page budgets) | [05-pdf-generation](05-pdf-generation.md) | `create-template`, `make-resume`, `make-cl` |

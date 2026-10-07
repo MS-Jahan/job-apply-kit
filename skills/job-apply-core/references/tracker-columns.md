@@ -3,6 +3,15 @@
 One row per application, 15 columns. Append only with `sheet_append.py append '<json-row>'`; the
 JSON keys below are the contract. Missing keys become empty cells; unknown keys are rejected.
 
+New jobs are appended with `status: Found` the moment they pass dedup; drafting and staging move
+the SAME row forward with `sheet_update.py set ROW '<json-partial>'` (Found → Drafted → Staged →
+Applied). A second row for the same job is never written.
+
+No sheet yet? `sheet_init.py` creates one with exactly these headers. Have your own sheet?
+`sheet_init.py --adopt <sheet-id-or-url>` matches its header row to the keys below (any order or
+names — "Employer" counts as company, "Stage" as status) and saves the match; extra columns are
+ignored and never written. Appends abort when the live header drifts from the saved match.
+
 | Col | JSON key | Header | Content |
 |---|---|---|---|
 | A | `date` | Date | processing date, `YYYY-MM-DD` |
@@ -14,7 +23,7 @@ JSON keys below are the contract. Missing keys become empty cells; unknown keys 
 | G | `location` | Location | city or "Remote" |
 | H | `job_link` | Job Link | post or apply URL |
 | I | `job_desc` | Job Description | the FULL job description text (never a summary) |
-| J | `status` | Job Status | Drafted, Staged, Applied, Skipped, Closed, ... (never overwrite what the user set by hand) |
+| J | `status` | Job Status | NEW jobs land here as `Found`; drafting/staging moves the same row (`Drafted`, `Staged`, `Applied`, `Skipped`, `Closed`, ...) via `sheet_update.py` — never a second row. Hand-set values are never overwritten. |
 | K | `how_applied` | How Applied | email draft, portal, Google Form, ... |
 | L | `contact` | Contact/Email | contact info from the post |
 | M | `salary` | Salary/Budget | advertised salary or "Negotiable" (not our own input value) |

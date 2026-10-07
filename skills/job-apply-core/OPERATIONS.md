@@ -128,9 +128,24 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 <a id="tracking"></a>
 ## 10. Tracking (Drive and Sheet)
 
-- Every processed job, including skipped, drafted and staged ones, gets one tracker row. Update the sheet after every application.
-- Upload documents with `python3 {{CORE_DIR}}/scripts/jak_google.py drive-upload <file> --name <name>` (goes to `drive_folder_id` and is shared as anyone-can-view; refused outside that folder).
+- Every processed job, including skipped, drafted and staged ones, gets one tracker row.
+- **Find → add immediately.** The moment a NEW job passes dedup, append its row with
+  `status: Found` (full post text in `job_desc`) — before drafting or staging. The row
+  is the claim ticket: a later run that sees the row never re-processes the job.
+- **Draft/stage → update, never a second row.** After the draft exists, after the form
+  is staged, move the SAME row forward:
+  `python3 {{CORE_DIR}}/scripts/sheet_update.py find --company X --position Y`
+  locates it, then
+  `python3 {{CORE_DIR}}/scripts/sheet_update.py set ROW '{"status":"Drafted","comments":"draft r_123"}'`
+  writes only those cells (RAW). Status moves inside Found → Drafted → Staged → Applied;
+  anything the user set by hand (for example "sent") refuses without `--force`.
 - Append rows only with `python3 {{CORE_DIR}}/scripts/sheet_append.py append '<json-row>'`. Never hand-roll an append: a miscounted field list shifts every column. The 15 columns A..O are in `references/tracker-columns.md`.
+- **Your own sheet is welcome.** `sheet_init.py --adopt <sheet-id-or-url>` matches its
+  header row to the 15 tracked columns (any order or names; extras ignored, never
+  written) and saves the match to config `sheet_columns`. Appends/updates then place
+  values at the matched positions and abort when the live header drifts. No match
+  (missing or two status-like columns): fix the headers or ask the user, never guess.
+- Upload documents with `python3 {{CORE_DIR}}/scripts/jak_google.py drive-upload <file> --name <name>` (goes to `drive_folder_id` and is shared as anyone-can-view; refused outside that folder).
 - Column I holds the full job description text, never a summary. Column O holds extra info only (message or draft ids, staged-form notes, file references), never job text.
 - Resume Drive column (D): when a template was used, the entry starts with `[template] ` followed by the link. If CV, resume and cover letter are all provided, put all links in that same cell, comma-separated. Template documents need no manual CV review; only the email or filled form does.
 - Never overwrite statuses the user set by hand (for example "sent" or "skipped").

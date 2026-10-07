@@ -28,14 +28,22 @@ The renamed template PDF goes to the configured Drive folder
 form needs your eyes). Sharing outside the configured folder is refused; on the `gog` backend the
 public share passes the explicit `--force` flag the CLI requires for non-interactive use.
 
-## Tracker: one guarded append
+## Tracker: add on find, update on draft
 
-One row per processed job (applied, drafted, staged, skipped or blocked) via
-`skills/job-apply-core/scripts/sheet_append.py`:
+One row per processed job (applied, drafted, staged, skipped or blocked):
 
-- Exactly **15 values (columns A–O)** or it refuses; it also aborts unless the live sheet header has
-  15 columns, so a hand-edited sheet cannot silently shift columns.
-- Writes with **RAW** value input: JD text with commas, pipes, newlines or a leading `=` lands
+- **Find → add:** the moment a NEW job passes dedup, append its row with `status: Found`
+  via `skills/job-apply-core/scripts/sheet_append.py` — before drafting or staging.
+- **Draft/stage → update the same row:** `skills/job-apply-core/scripts/sheet_update.py
+  find --company X --position Y` locates it, then `sheet_update.py set ROW
+  '{"status":"Drafted","comments":"draft r_123"}'` moves it forward
+  (Found → Drafted → Staged → Applied). A status the user set by hand (for example
+  "sent") refuses without `--force`.
+- Appends need **exactly the 15 tracked columns** — or refuse; a hand-edited kit sheet
+  cannot silently shift columns. Your own sheet works too: `sheet_init.py --adopt
+  <sheet-id-or-url>` matches its headers (any order/names, extras ignored) and saves
+  the match, and every write aborts when the live header drifts.
+- Writes are **RAW**: JD text with commas, pipes, newlines or a leading `=` lands
   literally instead of becoming a formula or splitting cells.
 - Full JD text goes in column I; column O holds extra notes only (draft id, staged-tab reference).
 
