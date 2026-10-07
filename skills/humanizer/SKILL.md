@@ -9,6 +9,8 @@ metadata:
 
 # Humanizer: remove AI writing patterns
 
+Universal rules: `{{CORE_DIR}}/OPERATIONS.md` (#documents). Config: none read (pure text transform).
+
 Identify and remove signs of AI-generated text so the result sounds natural and human. Based on Wikipedia's "Signs of AI writing" guide (maintained by WikiProject AI Cleanup), derived from observations of thousands of AI-generated text instances.
 
 **Key insight:** LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely completion, which is how the telltale patterns below get baked in.

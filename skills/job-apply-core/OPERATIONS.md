@@ -37,6 +37,7 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 ## 2. Setup
 
 - Config is one markdown file: `$JAK_CONFIG` or `~/.config/job-apply-kit/config.md`. Load keys through `{{CORE_DIR}}/scripts/jak_config.py` (`--check`, `--show`, `--get KEY`). If a required key is missing, stop and ask; do not guess.
+- Config-first, every run: read this file, then load `config.md`, before any other step. Each skill lists the keys it reads under "Config keys read". The full key reference is `docs/help/00-config.md`.
 - Run `doctor.sh` when something external fails (tools, Google backend, debug browser). Tool details live in `docs/EXTERNAL_TOOLS.md`.
 - Runtime data lives in the workspace (`workspace` key): `JDs/` inputs, caches and run state; `output/<company-slug>/` per-job files and evidence; `templates/` the user's templates; `SESSIONS.md` the session log; `.cache/` live-source snapshots.
 
@@ -44,6 +45,7 @@ user's `config.md` (see `jak_config.py --show`). Never write personal facts into
 ## 3. Sources of candidate facts
 
 - The only source of facts about the candidate is `cv_source` (URLs or local files), plus `projects_source` if set. At the start of every session that touches candidate content (tailoring, cover letters, critiques, applications) read all of them.
+- `config.md` is a cache of those sources, not the truth: creating or refreshing it always re-reads them live (full text via the debug browser for Google Docs), shows a diff of changed keys, and asks before overwriting non-empty values. Yesterday's facts never beat today's source.
 - If a source is unreachable, stop and tell the user. Do not fall back to memory, old resumes or old outputs.
 - Google Docs links are always read via their lightweight view: rewrite
   `.../document/d/<id>/...` to `.../document/d/<id>/mobilebasic` before

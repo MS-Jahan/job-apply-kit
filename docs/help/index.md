@@ -22,6 +22,7 @@ for your path. On native Windows, run the Python entry points directly (`python 
 
 | Module | Page | Skills involved |
 |---|---|---|
+| config.md: every key, per-job flow, refresh rules | [00-config](00-config.md) | all (config-first, every run) |
 | Prerequisites (Python, Node, accounts) | [01-prerequisites](01-prerequisites.md) | all |
 | Google auth + Gmail/Drive/Sheets backend | [02-google-setup](02-google-setup.md) ([Cloud Console walkthrough](02-cloud-console.md)) | every apply skill, via `job-apply-core` |
 | Debug browser + agent-browser + MCP fallback | [03-browser-setup](03-browser-setup.md) | every search/apply skill |

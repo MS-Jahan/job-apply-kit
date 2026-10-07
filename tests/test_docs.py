@@ -63,6 +63,18 @@ class DocTokenTests(unittest.TestCase):
         self.assertIn("MIT License", text)
 
 
+class ConfigDocTests(unittest.TestCase):
+    def test_every_config_key_documented(self):
+        # docs/help/00-config.md is the central key reference: every script-read
+        # key in config.example.md must be explained there.
+        example = (REPO / "config.example.md").read_text(encoding="utf-8")
+        ref = (REPO / "docs" / "help" / "00-config.md").read_text(encoding="utf-8")
+        keys = re.findall(r"^- \*\*([A-Za-z0-9_]+):\*\*", example, re.M)
+        self.assertTrue(keys)
+        for k in keys:
+            self.assertIn(f"`{k}`", ref, f"00-config.md does not document {k}")
+
+
 class DockerfileTests(unittest.TestCase):
     def test_dockerfile_structure(self):
         text = (REPO / "Dockerfile").read_text()

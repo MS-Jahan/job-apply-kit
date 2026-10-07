@@ -68,5 +68,13 @@ class SkillTests(unittest.TestCase):
                     self.assertIsNone(rx.search(text), f"{f.relative_to(REPO)} matches {rx.pattern}")
 
 
+    def test_every_skill_points_at_operations(self):
+        # Config-first rule (OPERATIONS.md#setup): every skill loads the central
+        # rules + config before acting, so each SKILL.md must say so up front.
+        for d in skill_dirs():
+            text = (d / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("OPERATIONS.md", text, f"{d.name}/SKILL.md never loads OPERATIONS.md")
+
+
 if __name__ == "__main__":
     unittest.main()

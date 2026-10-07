@@ -6,6 +6,8 @@ user-invocable: true
 
 # /setup-extract
 
+Universal rules: `{{CORE_DIR}}/OPERATIONS.md` (#sources). Config keys read: `cv_source`, `workspace`.
+
 **User input:** `$ARGUMENTS`
 
 Parse `$ARGUMENTS`:
