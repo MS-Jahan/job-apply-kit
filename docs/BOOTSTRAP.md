@@ -11,6 +11,9 @@ When the user asks you to set up, fix, or verify their environment:
 
 1. **Detect the OS** (section 1). Every install command below is OS-specific —
    never run an `apt` command on Windows or a `winget` command on Linux.
+   On Windows, run everything in **Git Bash**, never PowerShell
+   (`OPERATIONS.md#shell`): `;` chains, `& 'path'`, `$LASTEXITCODE` and
+   `2>&1` behave differently there and stall or fail unix-style commands.
 2. **Run the status check first, always:**
    `python doctor.py --mode all` (on Windows use `py -3`; the `.sh` wrappers
    need Git Bash or WSL). Work through each `MISSING` line top to bottom.

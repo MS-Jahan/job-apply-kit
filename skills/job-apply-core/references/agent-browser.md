@@ -19,6 +19,13 @@ npm list -g agent-browser        # check registered version
 npm install -g agent-browser@latest   # update
 ```
 
+- On Windows, run every command below in **Git Bash** (`OPERATIONS.md#shell`),
+  never PowerShell: PowerShell converts the CLI's stderr notices (for example
+  `[agent-browser] launched browser`) into `NativeCommandError` failures and
+  stalls unix-style chains. First line in Git Bash:
+  `export PATH="$(cygpath "$APPDATA/npm"):$PATH"` (replaces the
+  `~/.npm-global/bin` export above — same idea, Windows npm location).
+
 - `which agent-browser` may fail if `~/.npm-global/bin` is not on PATH — always
   export PATH first (binary lives at `~/.npm-global/bin/agent-browser`).
 - Expect an `EBADENGINE` warning if node < 24; the CLI still works.

@@ -4,6 +4,28 @@ This is the single place for rules that apply to every skill. Skills keep only t
 point here with `OPERATIONS.md#<anchor>`. Values in `<angle brackets>` or `config key` come from the
 user's `config.md` (see `jak_config.py --show`). Never write personal facts into this file or into skills.
 
+<a id="shell"></a>
+## 0. Shell (read before running anything)
+
+- Every run, detect the OS first — never assume it from an earlier session:
+  `python3 -c "import platform; print(platform.system())"` (on Windows: `py -3`).
+- On Windows, run ALL kit and agent commands in **Git Bash**, never PowerShell:
+  `<git>\bin\bash.exe -lc "<command>"`. Typical locations:
+  `%ProgramFiles%\Git\bin\bash.exe`, or user-scope
+  `%LocalAppData%\Programs\Git\bin\bash.exe`; verify with `bash.exe --version`.
+  `C:\Windows\System32\bash.exe` is WSL, not Git Bash — never use it for kit commands.
+- Why: PowerShell turns native stderr text into `NativeCommandError` failures
+  (for example agent-browser's `[agent-browser] launched browser` notice), and
+  its `;`, `& 'path'`, `$LASTEXITCODE` idioms differ from bash. Unix-style
+  chains (`cmd1 && cmd2`, `2>&1`, `| head -1`) belong in Git Bash.
+- First line in every Git Bash session on Windows:
+  `export PATH="$(cygpath "$APPDATA/npm"):$PATH"` so `agent-browser` and other
+  npm globals resolve; then `agent-browser connect <cdp_port> && agent-browser tab list`.
+- PowerShell is only for what bash cannot do (desktop `.lnk` shortcuts, HKCU
+  registry, `tasklist` checks) — the kit scripts already do that internally.
+  Do not hand-roll PowerShell for kit or agent commands.
+- Linux/macOS: use the normal shell (`python3`, `timeout`, pipes as usual).
+
 <a id="precedence"></a>
 ## 1. Precedence
 
