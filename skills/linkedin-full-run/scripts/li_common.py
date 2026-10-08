@@ -23,16 +23,18 @@ except ImportError as _e:  # pragma: no cover
     raise SystemExit(f"ERROR: job-apply-core is required next to this skill ({_e}). Run install.sh.")
 
 CDP_PY = os.path.join(CORE_SCRIPTS, "cdp.py")
-DEFAULT_QUERIES = [
-    '"Software Engineer" AND (hiring OR vacancy)',
-    '"Software Developer" AND (hiring OR vacancy)',
-    '(Fullstack OR Backend OR Frontend) AND developer AND (hiring OR vacancy)',
-]
 _SETTINGS = None
 
 
 def settings():
-    """Personal tuning comes from the user's config, never from this file."""
+    """Personal tuning comes from the user's config, never from this file.
+
+    Search queries are NOT parsed here: the agent reads `linkedin_queries`
+    from config.md, applies the separator convention (comma by default), and
+    hands the list to li1_extract.py via --queries. A script-side parser
+    cannot tell a separator comma from a comma inside a query, and a wrong
+    merge fails silently on LinkedIn (zero results).
+    """
     global _SETTINGS
     if _SETTINGS is None:
         try:
@@ -42,7 +44,6 @@ def settings():
         _SETTINGS = {
             "cfg": cfg,
             "workspace": str(cfg.path("workspace")),
-            "queries": cfg.lines("linkedin_queries") or DEFAULT_QUERIES,
             "ok_locations": tuple(x.lower() for x in cfg.list("onsite_locations")),
             "max_exp": cfg.int("max_experience_years") or 5,
             "min_salary": cfg.int("min_salary") or 15000,
@@ -52,11 +53,9 @@ def settings():
     return _SETTINGS
 
 
-def __getattr__(name):  # lazy attributes for the scripts: L.REPO, L.SEARCH_QUERIES, ...
+def __getattr__(name):  # lazy attributes for the scripts: L.REPO, ...
     if name == "REPO":
         return settings()["workspace"]
-    if name == "SEARCH_QUERIES":
-        return settings()["queries"]
     if name == "ACCEPTED_LOCATIONS":
         return settings()["ok_locations"]
     raise AttributeError(name)

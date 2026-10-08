@@ -1,4 +1,4 @@
-import importlib, os, sys, tempfile, unittest
+import importlib, os, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from unittest import mock
 
@@ -17,8 +17,7 @@ CFG = """## Identity
 - **currency:** USD
 - **onsite_locations:** Springfield
 ## Search terms
-- **linkedin_queries:**
-    "Rust" AND (hiring OR vacancy), with comma
+- **linkedin_queries:** "Rust" AND (hiring OR vacancy),
     "Go" AND hiring
 """
 
@@ -49,8 +48,19 @@ class LiTests(unittest.TestCase):
         self.env.stop()
         self.tmp.cleanup()
 
-    def test_queries_from_config_keep_commas(self):
-        self.assertEqual(self.L.SEARCH_QUERIES, ['"Rust" AND (hiring OR vacancy), with comma', '"Go" AND hiring'])
+    def test_queries_are_agent_mediated(self):
+        # The script never parses linkedin_queries itself: the agent reads the
+        # config and passes --queries "a;b". Any leftover SEARCH_QUERIES
+        # accessor would silently re-introduce the wrong-merge bug.
+        with self.assertRaises(AttributeError):
+            self.L.SEARCH_QUERIES
+
+    def test_li1_requires_queries_flag(self):
+        out = subprocess.run(
+            [sys.executable, str(SK / "li1_extract.py")],
+            capture_output=True, text=True, timeout=60)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("--queries", out.stderr)
 
     def test_workspace_paths(self):
         self.assertTrue(self.L.run_dir("2026-01-01").startswith(self.tmp.name))

@@ -15,6 +15,13 @@ The source is LinkedIn **post search results**, not saved posts (`check-linkedin
 `JDs/linkedin-saved/applied_cache.json`, see `{{CORE_DIR}}/references/shared-caches.md`). Queries come from `linkedin_queries`;
 `linkedin-job-search` documents how to write them.
 
+**Query format.** `linkedin_queries` is agent-mediated: the agent reads it from config.md, applies the separator convention
+(**comma is the default separator** — one query per line with trailing commas, or all comma-separated on one line), asks the
+user when a comma inside a query makes the separator ambiguous, and hands the resolved list to the sweep as
+`--queries "a;b"`. The script does not parse the config itself: a script-side parser cannot tell a separator comma from a
+comma inside a query, and LinkedIn silently returns zero results for a wrongly merged or over-long keywords string (a
+~700-character multi-query string once swept 0 posts), so a wrong guess would fail invisibly.
+
 ## Role split
 
 - **Scripts** do the mechanical work: sweep, capture text, parse fields, open pages, upload the PDF, write the sheet row, keep caches.
@@ -37,10 +44,15 @@ The source is LinkedIn **post search results**, not saved posts (`check-linkedin
 
 ### Step 1: sweep (`li1_extract.py`)
 ```bash
-python3 {{SKILL_DIR}}/scripts/li1_extract.py [--date D] [--queries "a;b"] [--rounds-per-query N]
+python3 {{SKILL_DIR}}/scripts/li1_extract.py --date D --queries "a;b" [--rounds-per-query N]
 ```
+`--queries` is required: prepare it first by reading `linkedin_queries` from config.md and splitting on the separator
+(see Query format above), then pass the queries `;`-joined.
 - The **Posts** filter and **Sort by Latest** are set in the URL (`&origin=FACETED_SEARCH&sortBy=%5B%22date_posted%22%5D`). Clicking the dropdown is unreliable, so every query navigates to the sorted URL and the run log must show `sort-by-latest: OK`.
-- Expands every "see more" in place, then collects the full post text.
+- Expands every "see more" in place, then collects the full post text. A query stops early when the feed turns stale: N
+  consecutive rounds with no fresh content (new posts, or a round that is mostly new — LinkedIn pads a spent query with
+  suggested job-flavored posts, which would otherwise scroll past the real results indefinitely), N rounds with the page
+  physically unable to scroll further, or the `--rounds-per-query` cap. Per-round counts land in `run_log.txt`.
 - Verified selectors: posts live under `[data-testid="lazy-column"] > div[data-display-contents="true"]`, text in `span[data-testid="expandable-text-box"]`. Class names are hashed and unstable; there is no `data-urn` and no shadow DOM. There is no per-post permalink, so `post_link` is a stable identity (author URL + text hash), not a URL to open.
 - Output: `posts.csv` (`post_link, full_text, should_apply, how_to_apply, comment, seen_before, verdict, source_query`), `posts.md`, `run_log.txt`; dedup verdicts go to `JDs/linkedin-saved/seen.json` (this skill's own file).
 

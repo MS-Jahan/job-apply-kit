@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """li1_extract.py — Phase 1 (REVISED): LinkedIn search sweep.
 
-Runs the fixed dorking query list on the LinkedIn posts search results page,
-applies Posts + Sort-by-Latest filters, scroll-collects posts, extracts FULL
-post text (expands "see more" in place, no navigation away), writes posts.csv
-(post_link | full_text | should_apply | how_to_apply | comment) + run_log.txt.
-Idempotent: dedup against seen.json; early-stops a query when its deeper
-results look already-swept.
+Runs the agent-prepared query list (`--queries`, ';' separated) on the LinkedIn
+posts search results page, applies Posts + Sort-by-Latest filters, scroll-
+collects posts, extracts FULL post text (expands "see more" in place, no
+navigation away), writes posts.csv (post_link | full_text | should_apply |
+how_to_apply | comment) + run_log.txt. Idempotent: dedup against seen.json;
+early-stops a query when its deeper results look already-swept.
+
+A query stops early on any of: N rounds with no FRESH feed (new posts, or a
+round that is mostly new -- LinkedIn pads a spent query with suggested
+job-flavored posts, so counting only added==0 scrolls past the real results
+forever); N rounds where the page physically cannot scroll further; or the
+hard --rounds-per-query cap.
 
 Selectors verified live 2026-09-14: results live under
 `[data-testid="lazy-column"] > div[data-display-contents="true"]` (React
@@ -54,18 +60,25 @@ SCROLL_JS = r"""
   // The results list sometimes lives in its own scrollable container, so move
   // BOTH the window and any ancestor scroller; a window-only scrollBy stops
   // working once the lazy-column takes over and silently caps the sweep.
+  // Also report scroll depth so the caller can detect a physically ended feed
+  // (nothing moved AND nothing left to scroll) instead of scrolling on blind.
   var step = Math.max(1200, Math.round(window.innerHeight * 0.9));
   window.scrollBy(0, step);
   var lc = document.querySelector('[data-testid="lazy-column"]');
-  var n = 0, el = lc;
+  var n = 0, maxTop = -1, room = false, el = lc;
+  if (window.innerHeight + window.scrollY <
+      (document.body ? document.body.scrollHeight - 50 : 0)) room = true;
   while (el && el !== document.body) {
     if (el.scrollHeight - el.clientHeight > 200) {
       el.scrollTop += step;
       if (el.scrollTop > 0) n++;
+      maxTop = Math.max(maxTop, Math.round(el.scrollTop));
+      if (el.scrollTop + el.clientHeight < el.scrollHeight - 50) room = true;
     }
     el = el.parentElement;
   }
   return JSON.stringify({y: Math.round(window.scrollY), scrollers: n,
+                         top: maxTop, room: room,
                          docH: document.body ? document.body.scrollHeight : 0});
 })()
 """
@@ -161,12 +174,24 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=None)
     ap.add_argument("--min", type=int, default=L.MIN_ITEMS)
-    ap.add_argument("--queries", default=None, help="';'-separated override")
+    ap.add_argument("--queries", required=True,
+                    help="';'-separated queries, prepared by the agent from "
+                         "linkedin_queries (comma is the separator by default)")
     ap.add_argument("--rounds-per-query", type=int, default=25,
                     help="hard cap on scroll rounds per query")
     ap.add_argument("--idle-rounds", type=int, default=4,
-                    help="stop a query after N consecutive scroll rounds that "
-                         "yield no new posts (deep-scroll tolerance)")
+                    help="stop a query after N consecutive rounds that yield "
+                         "no fresh feed (no new posts, or mostly recycled)")
+    ap.add_argument("--stale-ratio", type=float, default=0.10,
+                    help="a round where fewer than this fraction of evaluated "
+                         "posts are new counts toward idle even if it added "
+                         "rows (LinkedIn pads a spent query with suggested "
+                         "job-flavored posts, which otherwise never trips the "
+                         "added==0 idle check)")
+    ap.add_argument("--stall-rounds", type=int, default=3,
+                    help="stop when the page physically cannot scroll further "
+                         "for N consecutive rounds (window y, scroller top and "
+                         "doc height unchanged, no scroll room left)")
     ap.add_argument("--scroll-wait", type=float, default=3.0,
                     help="seconds to wait after each scroll step")
     args = ap.parse_args()
@@ -176,7 +201,7 @@ def main():
     seen_path = os.path.join(L.cache_root(), "seen.json")
     seen = L.load_json(seen_path, [])
     seen_urls = {s.get("post_url") for s in seen if s.get("post_url")}
-    queries = (args.queries.split(";") if args.queries else L.SEARCH_QUERIES)
+    queries = [q.strip() for q in args.queries.split(";") if q.strip()]
 
     L.log(rundir, f"li1 REVISED start; {len(queries)} queries; target >= {args.min}")
 
@@ -197,7 +222,7 @@ def main():
             L.cdp_eval(tab, f"location.href = {json.dumps(L.sort_latest_url(L.search_url(q)))}")
             time.sleep(8)
             verify_page(tab, rundir)
-            q_new, q_eval, idle = 0, 0, 0
+            q_new, q_eval, idle, stall, last_sig = 0, 0, 0, 0, None
             for rnd in range(args.rounds_per_query):
                 # expand see-more in place, then collect
                 L.cdp_eval(tab, EXPAND_JS)
@@ -207,10 +232,31 @@ def main():
                 rows, added = merge(rows, batch, seen_urls, source_query=q)
                 q_new += added
                 q_eval += len(batch)
-                idle = 0 if added else idle + 1
+                ratio = (added / len(batch)) if batch else 0.0
+                L.log(rundir, f"  round {rnd + 1}: evaluated {len(batch)}, "
+                              f"+{added} new, fresh {ratio:.0%}")
+                # Feed-recycling guard. Once a query's own results end, LinkedIn
+                # keeps the feed scrollable with suggested posts that are often
+                # job-flavored, so an added==0 idle never trips and the sweep
+                # scrolls past the real results. A round that is mostly
+                # recycled content counts as idle even when it adds a few rows;
+                # a genuinely fresh round (or a short fully-new one) resets it.
+                if len(batch) >= 10 and ratio >= args.stale_ratio:
+                    idle = 0
+                else:
+                    idle += 1
                 if idle >= args.idle_rounds:
                     break  # scrolled well past the fresh results
-                L.cdp_eval(tab, SCROLL_JS)
+                state = parse_json(L.cdp_eval(tab, SCROLL_JS)) or {}
+                sig = (state.get("y"), state.get("top"), state.get("docH"))
+                if sig == last_sig and not state.get("room", True):
+                    stall += 1
+                else:
+                    stall = 0
+                last_sig = sig
+                if stall >= args.stall_rounds:
+                    L.log(rundir, "  page cannot scroll further (feed end)")
+                    break
                 time.sleep(args.scroll_wait)
             total_new += q_new
             L.log(rundir, f"  query done: evaluated {q_eval}, {q_new} new posts "
