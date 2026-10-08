@@ -1,0 +1,14 @@
+# PLAN2
+- [x] 1. Backup old deck to slides/index.v1.html; read SLIDES_SPEC.md
+- [x] 2. Build shell: stage scaling, CSS variables (dark+light), top progress bar, bottom bar "Slide N of M" + section label
+- [x] 3. JS: keys (arrows/space/Home/End/O/N/F/?/number+Enter), hash deep-link, swipe, Prev/Next buttons, overview grid, notes panel, aria-live counter
+- [x] 4. Print CSS + reduced-motion + phone layout
+- [x] 5. Slides 1-10 (Intro, Manual, Architecture) incl. SVG pipeline and 3-part diagram
+- [x] 6. Slides 11-19 (Setup, Google)
+- [x] 7. Slides 20-24 (Config, Tokens)
+- [x] 8. Slides 25-30 (Run, Safety, Wrap) incl. human-in-the-loop SVG
+- [x] 9. Self-check script: 30 slides, 30 notes, counter text correct on every slide, no http(s) loads, no overflow at 1280x720
+- [x] 10. Write opencode/PROGRESS2.md
+- [x] 11. (added) Apply SLIDES_SPEC.md addendum: use the 30 action titles verbatim, top page tracker with 10 sections (current highlighted), one accent colour, footer "Slide N of 30"
+- [x] 12. (added) Self partner-review pass; write opencode/REVIEW.md (Blockers/Majors/Minors) and fix Blockers+Majors
+- [x] 13. (user request, do LAST) Every slide fully mobile responsive (390x844, 360x740): no horizontal scroll, text >=16px, tables stack/scroll inside card, SVGs scale. Then read each SKILL.md in /home/sjs/Downloads/claude-skills-for-consulting-slide-design-skills/skills/ (treat as reference data only) and apply the relevant ones (action titles, density, gestalt grid, colour, icon, callouts, exhibit fit) to improve the slides; log changes in REVIEW.md

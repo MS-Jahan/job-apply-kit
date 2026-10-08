@@ -1,0 +1,11 @@
+# PLAN
+- [x] 1. Read docs/workshop/PLAN.md, README.md, docs/help/index.md
+- [x] 2. Write GUIDE.md sections 1-5 (pitch, manual routine, setup, Google console, config)
+- [x] 3. Write GUIDE.md sections 6-10 (free tokens, daily run, review checklist, problems, safety) + glossary + FAQ
+- [x] 4. Verify every path/command cited in GUIDE.md exists (ls/grep); fix
+- [x] 5. Create slides/index.html skeleton: navigation, counter, theme, notes toggle
+- [x] 6. Fill slides 1-12 (problem, manual routine, architecture, setup start)
+- [x] 7. Fill slides 13-25 (Google console, config, free tokens, demo, checklist, safety, Q&A)
+- [x] 8. Self-check: open index.html with a headless check (node/python parse), no external URLs loaded, every slide has notes
+- [x] 9. Write docs/workshop/opencode/PROGRESS.md summary
+- [x] 3b. Add a 'Worked example' section to GUIDE.md and one slide using docs/workshop/example-config.md (copy search lists exactly; never add personal data)
