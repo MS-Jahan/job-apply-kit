@@ -1,5 +1,7 @@
 # Job Apply Kit — Beginner's Guide (Windows, macOS, Linux)
 
+> Online version of the workshop slides: https://job-apply-kit.pages.dev/
+> This kit is a starting point, not a finished product: expect to give your agent instructions as you use it so it fits your own workflow and job platforms.
 > Facts come from `docs/workshop/PLAN.md`, `README.md`, `docs/BOOTSTRAP.md` and `docs/help/*`.
 > If this guide disagrees with those files, trust those files.
 > Reading time for sections 0–15: about 40 minutes.

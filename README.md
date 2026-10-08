@@ -1,5 +1,14 @@
 # job-apply-kit
 
+> [!IMPORTANT]
+> **This is not a ready-to-use product, and it does not fit everyone.**
+> It is a set of scripts and instructions that help me find jobs and apply automatically.
+> Expect to use it first, then keep giving your agent instructions as you go, so it adapts to
+> **your own workflow** and **your preferred job platforms**. Treat it as a starting point you
+> shape, not something you install and forget.
+>
+> Workshop guide and slides: **https://job-apply-kit.pages.dev/**
+
 A Claude Code / OpenCode skill kit for tailoring resumes and CVs, and for automating the job-search and
 application grind: scanning BDJobs, LinkedIn, Facebook, Discord and pasted job-post screenshots, then
 staging an application for your review — never submitting or sending anything without you.
