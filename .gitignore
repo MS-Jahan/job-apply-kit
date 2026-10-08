@@ -45,3 +45,6 @@ Thumbs.db
 .opencode/
 .opencode-runs/
 .genome/
+
+# local CV text export (personal data)
+cv_source.txt
